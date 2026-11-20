@@ -75,7 +75,7 @@
     el.addEventListener('pointerenter', () => { if (el.classList.contains('settled') && !reduced) el.classList.add('nudge'); });
   }
   const st = document.createElement('style');
-  st.textContent = '.settled{animation:none!important;opacity:1!important;transform:rotate(var(--tilt,0deg))!important}.settled.nudge{animation:nudge 1.3s ease both!important}';
+  st.textContent = '.settled{opacity:1!important;transform:rotate(var(--tilt,0deg));animation:sway var(--sd,7s) ease-in-out infinite!important;animation-delay:var(--sdl,0s)!important}.settled.nudge{animation:nudge 1.3s ease both!important}@media (prefers-reduced-motion:reduce){.settled{animation:none!important}}';
   document.head.appendChild(st);
   settleOnEnd($('#hung'));
 
@@ -185,7 +185,7 @@
       const kind = ratio > 1.15 ? 'wide' : ratio < .85 ? 'tall' : 'sq';
       const a = document.createElement('article');
       a.className = `piece piece--${kind}`; a.dataset.i = i;
-      a.style.cssText = `--off:${OFF[i % OFF.length]}px;--d:${(i % 3) * .18}s;--lt:${LT[i % LT.length]}deg`;
+      a.style.cssText = `--off:${OFF[i % OFF.length]}px;--d:${(i % 3) * .18}s;--lt:${LT[i % LT.length]}deg;--sd:${6 + (i % 4) * 1.1}s;--sdl:-${(i * 1.7).toFixed(1)}s`;
       a.innerHTML = `
         <div class="piece__hang" style="--tilt:${TILT[i % TILT.length]}deg">
           <button type="button" class="piece__canvas" aria-label="${esc(L(w, 'titolo'))}">

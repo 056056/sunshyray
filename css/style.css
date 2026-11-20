@@ -33,8 +33,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 /* ---------- top ---------- */
 .top{position:sticky;top:0;z-index:40;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px var(--pad);background:linear-gradient(var(--paper) 70%,rgba(242,237,227,0))}
-.sig{font-family:var(--hand);font-size:40px;line-height:1;text-decoration:none;color:var(--ink);transform:rotate(-3deg);display:inline-block;transition:transform .5s}
-.sig:hover{transform:rotate(1deg)}
+.sig{font-family:var(--hand);font-size:clamp(52px,6vw,76px);line-height:.9;text-decoration:none;color:var(--ink);display:inline-block;transform-origin:20% 60%;animation:wobble 7s ease-in-out infinite}
+@keyframes wobble{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(-.5deg) translateY(-2px)}}
 .top__nav{display:flex;gap:clamp(12px,2.6vw,32px);align-items:baseline;font-family:var(--type);font-size:14px}
 .top__nav a{text-decoration:none;position:relative}
 .top__nav a::after{content:"";position:absolute;left:-2px;right:-2px;bottom:-3px;height:7px;background:no-repeat center/100% 100% url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 8' preserveAspectRatio='none'%3E%3Cpath d='M2 5 C 30 2, 60 7, 98 3' fill='none' stroke='%23b0241c' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");clip-path:inset(0 100% 0 0);transition:clip-path .45s ease}
@@ -127,7 +127,7 @@ html[lang=it] .lang [data-l=it],html[lang=en] .lang [data-l=en]{opacity:1;text-d
 .about__grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:clamp(30px,6vw,90px);align-items:center;margin-top:clamp(40px,6vw,80px)}
 .letter{position:relative;background:var(--card);padding:clamp(28px,4.5vw,60px) clamp(24px,4.5vw,64px) clamp(26px,3.5vw,44px);box-shadow:0 2px 0 rgba(0,0,0,.04),0 24px 40px -22px rgba(40,30,20,.45);transform:rotate(-.8deg);
   background-image:repeating-linear-gradient(transparent 0 33px,rgba(70,100,140,.12) 33px 34px);background-position:0 18px}
-.letter__body{font-size:clamp(20px,1.7vw,23px);line-height:34px}
+.letter__body{font-family:var(--hand);font-size:clamp(30px,2.9vw,38px);line-height:34px;color:var(--ink)}
 .letter__body p+p{margin-top:34px}
 .letter__body .br{display:block}
 .letter__body .w{opacity:.18;transition:opacity .6s}
@@ -141,7 +141,7 @@ html[lang=it] .lang [data-l=it],html[lang=en] .lang [data-l=en]{opacity:1;text-d
 .pinned:hover{transform:rotate(.5deg) scale(1.02)}
 .pinned img{width:100%;height:auto;filter:grayscale(.2) brightness(1.3) contrast(1.12)}
 .tape--c{left:50%;margin-left:-55px;top:-16px;transform:rotate(-4deg);z-index:1}
-.about .letter__body{font-size:clamp(22px,2vw,27px)}
+
 .about__scrawl{transform:rotate(-3deg);text-align:center}
 
 /* ---------- contatti / cartolina ---------- */
@@ -219,5 +219,26 @@ html[lang=it] .lang [data-l=it],html[lang=en] .lang [data-l=en]{opacity:1;text-d
   .piece__hang{opacity:1;transform:none}
   html{scroll-behavior:auto}
 }
-section[id]{scroll-margin-top:70px}
+section[id]{scroll-margin-top:100px}
 .room__close:focus:not(:focus-visible){outline:none}
+
+/* ---------- movimento continuo, leggero ---------- */
+@keyframes sway{0%,100%{transform:rotate(var(--tilt,0deg))}25%{transform:rotate(calc(var(--tilt,0deg) + .7deg))}75%{transform:rotate(calc(var(--tilt,0deg) - .7deg))}}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(var(--r,0deg))}50%{transform:translateY(-6px) rotate(calc(var(--r,0deg) + .5deg))}}
+@keyframes drift{0%,100%{transform:translate(0,0) rotate(var(--r,0deg))}33%{transform:translate(2px,-5px) rotate(calc(var(--r,0deg) + .6deg))}66%{transform:translate(-2px,-2px) rotate(calc(var(--r,0deg) - .4deg))}}
+.label{animation:bob var(--sd,6s) ease-in-out infinite;animation-delay:var(--sdl,0s);--r:var(--lt,0deg)}
+.letter{--r:-.8deg;animation:drift 11s ease-in-out infinite}
+.pinned{--r:2.5deg;animation:drift 9s ease-in-out infinite -3s}
+.pinned:hover{animation-play-state:paused}
+.postcard{--r:.7deg;animation:drift 12s ease-in-out infinite -5s}
+.stamp{--r:4deg;animation:bob 5s ease-in-out infinite}
+.doodle-eyes .deye:first-child{animation:bob 4.6s ease-in-out infinite}
+.doodle-eyes .deye:last-child{animation:bob 5.3s ease-in-out infinite -1.7s}
+.kicker{--r:-1.5deg;animation:bob 6s ease-in-out infinite}
+.intro__go{--r:-2deg;animation:bob 3.8s ease-in-out infinite}
+.show__note{--r:-2deg;animation:bob 6.5s ease-in-out infinite -2s}
+.about__scrawl{--r:-3deg;animation:bob 5.5s ease-in-out infinite -1s}
+.hung figcaption{--r:-4deg;animation:bob 4.4s ease-in-out infinite}
+.room.open .room__canvas{animation:hang 2s cubic-bezier(.3,.6,.4,1) .1s both,sway 8s ease-in-out 2.1s infinite}
+@media (max-width:620px){.postcard{--r:0deg}}
+@media (prefers-reduced-motion:reduce){.label,.letter,.pinned,.postcard,.stamp,.deye,.kicker,.intro__go,.show__note,.about__scrawl,.sig{animation:none!important}}
