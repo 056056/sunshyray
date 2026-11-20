@@ -136,7 +136,7 @@
   function updateWords() {
     const w = bioBox._w; if (!w) return;
     const r = bioBox.getBoundingClientRect();
-    const p = Math.min(1, Math.max(0, (innerHeight * .9 - r.top) / (r.height + innerHeight * .2)));
+    const p = Math.min(1, Math.max(0, (innerHeight * .95 - r.top) / (r.height + innerHeight * .1)));
     const n = reduced ? w.length : Math.round(p * w.length);
     w.forEach((s, i) => s.classList.toggle('on', i < n));
   }
