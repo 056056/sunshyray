@@ -50,6 +50,7 @@
     return (navigator.language || 'it').toLowerCase().startsWith('it') ? 'it' : 'en';
   })();
   const t = k => T[lang][k];
+  const abs = u => new URL(u, location.href).href;
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   /* ---------------- linee a mano ---------------- */
@@ -189,7 +190,7 @@
       a.innerHTML = `
         <div class="piece__hang" style="--tilt:${TILT[i % TILT.length]}deg">
           <button type="button" class="piece__canvas" aria-label="${esc(L(w, 'titolo'))}">
-            <img src="${esc(w.thumb || w.img)}" alt="${esc(L(w, 'titolo'))}" loading="lazy" width="${w.w || ''}" height="${w.h || ''}">
+            <span class="cv" style="--img:url('${esc(abs(w.thumb || w.img))}')"><img src="${esc(w.thumb || w.img)}" alt="${esc(L(w, 'titolo'))}" loading="lazy" width="${w.w || ''}" height="${w.h || ''}"><i class="weave"></i></span>
           </button>
         </div>
         <div class="label">${labelHTML(w)}</div>`;
@@ -208,6 +209,7 @@
     $('#hung').hidden = !hw;
     if (hw) {
       $('#hungImg').src = hw.thumb || hw.img; $('#hungImg').alt = L(hw, 'titolo');
+      $('#hungCv').style.setProperty('--img', `url('${abs(hw.thumb || hw.img)}')`);
       if (hw.w && hw.h) { $('#hungImg').width = hw.w; $('#hungImg').height = hw.h; $('#hungImg').style.height = 'auto'; }
       $('#hungCap').textContent = t('latest');
       $('#hungBtn').onclick = () => openRoom(hi);
@@ -259,6 +261,7 @@
     const w = works[i]; cur = i;
     const sold = w.stato === 'venduta', title = L(w, 'titolo');
     $('#rImg').src = w.img; $('#rImg').alt = title;
+    $('#rCv').style.setProperty('--img', `url('${abs(w.thumb || w.img)}')`);
     $('#rLabel').innerHTML = labelHTML(w, true);
     $('#rDesc').textContent = L(w, 'descrizione');
     const pr = $('#rPrice'); pr.classList.toggle('sold', sold);
