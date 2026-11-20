@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>sunshyray — dipinti</title>
+<meta name="description" content="sunshyray — dipinti originali. Occhi, spirali, rosso e bianco.">
+<meta name="theme-color" content="#0c0a0a">
+<meta property="og:title" content="sunshyray">
+<meta property="og:description" content="Dipinti originali — occhi, spirali, rosso e bianco.">
+<meta property="og:image" content="og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="is-loading">
+
+<!-- preloader -->
+<div class="loader" aria-hidden="true">
+  <svg class="loader__spiral" viewBox="-100 -100 200 200"><path class="spiral-path" /></svg>
+  <div class="loader__count"><span>0</span></div>
+</div>
+
+<!-- cursor -->
+<div class="cursor" aria-hidden="true"><div class="cursor__dot"></div><div class="cursor__ring"><span class="cursor__label"></span></div></div>
+
+<div class="grain" aria-hidden="true"></div>
+
+<header class="nav">
+  <a href="#top" class="nav__logo" aria-label="sunshyray">
+    <svg viewBox="-100 -100 200 200" class="mini-spiral"><path class="spiral-path" /></svg>
+    <span>sunshyray</span>
+  </a>
+  <nav class="nav__links">
+    <a href="#bio" data-i18n="nav_bio">Bio</a>
+    <a href="#opere" data-i18n="nav_works">Opere</a>
+    <a href="#contatti" data-i18n="nav_contact">Contatti</a>
+  </nav>
+  <button class="lang" type="button" aria-label="Lingua / Language"><span data-l="it">IT</span><i>/</i><span data-l="en">EN</span></button>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <svg class="hero__spiral" viewBox="-100 -100 200 200" aria-hidden="true"><path class="spiral-path" /></svg>
+
+    <div class="eyes" aria-hidden="true">
+      <div class="eye eye--red"><svg viewBox="0 0 200 120">
+        <defs><clipPath id="almond-r"><path d="M4 60 Q100 -18 196 60 Q100 138 4 60Z"/></clipPath></defs>
+        <g class="eye__lid">
+          <path class="eye__white" d="M4 60 Q100 -18 196 60 Q100 138 4 60Z"/>
+          <g clip-path="url(#almond-r)"><g class="eye__iris">
+            <circle r="34" cx="100" cy="60" class="iris"/>
+            <circle r="34" cx="100" cy="60" class="iris-ring"/>
+            <circle r="14" cx="100" cy="60" class="pupil"/>
+            <circle r="5" cx="111" cy="49" class="glint"/>
+          </g></g>
+          <path class="eye__line" d="M4 60 Q100 -18 196 60 Q100 138 4 60Z"/>
+        </g>
+      </svg></div>
+      <div class="eye eye--white"><svg viewBox="0 0 200 120">
+        <defs><clipPath id="almond-w"><path d="M4 60 Q100 -18 196 60 Q100 138 4 60Z"/></clipPath></defs>
+        <g class="eye__lid">
+          <path class="eye__white" d="M4 60 Q100 -18 196 60 Q100 138 4 60Z"/>
+          <g clip-path="url(#almond-w)"><g class="eye__iris">
+            <circle r="34" cx="100" cy="60" class="iris"/>
+            <circle r="34" cx="100" cy="60" class="iris-ring"/>
+            <circle r="14" cx="100" cy="60" class="pupil"/>
+            <circle r="5" cx="111" cy="49" class="glint"/>
+          </g></g>
+          <path class="eye__line" d="M4 60 Q100 -18 196 60 Q100 138 4 60Z"/>
+        </g>
+      </svg></div>
+    </div>
+
+    <h1 class="hero__title" aria-label="sunshyray"><span class="split">sunshyray</span></h1>
+    <p class="hero__sub reveal-up" data-i18n="hero_sub">dipinti originali · occhi · spirali</p>
+    <a href="#opere" class="hero__scroll" aria-label="scroll"><span data-i18n="scroll">scorri</span><i></i></a>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee" aria-hidden="true"><div class="marquee__track"></div></div>
+
+  <!-- BIO -->
+  <section class="bio" id="bio">
+    <div class="label reveal-up"><span>(01)</span> <span data-i18n="bio_label">Bio</span></div>
+    <div class="bio__grid">
+      <div class="bio__art" aria-hidden="true">
+        <svg class="bio__spiral" viewBox="-100 -100 200 200"><path class="spiral-path" /></svg>
+        <div class="bio__eye"></div>
+      </div>
+      <p class="bio__text words" id="bioText"></p>
+    </div>
+  </section>
+
+  <!-- WORKS -->
+  <section class="works" id="opere">
+    <div class="works__head">
+      <div class="label reveal-up"><span>(02)</span> <span data-i18n="works_label">Opere</span></div>
+      <h2 class="big-title"><span class="split" data-i18n-split="works_title">Opere</span></h2>
+      <div class="filters reveal-up" role="tablist">
+        <button class="is-active" data-filter="all" data-i18n="f_all">Tutte</button>
+        <button data-filter="disponibile" data-i18n="f_avail">Disponibili</button>
+        <button data-filter="venduta" data-i18n="f_sold">Vendute</button>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <p class="empty" id="empty" hidden data-i18n="empty">Nuove opere in arrivo.</p>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact" id="contatti">
+    <svg class="contact__spiral" viewBox="-100 -100 200 200" aria-hidden="true"><path class="spiral-path" /></svg>
+    <div class="label reveal-up"><span>(03)</span> <span data-i18n="contact_label">Contatti</span></div>
+    <h2 class="contact__title"><span class="split" data-i18n-split="contact_title">Guardiamoci.</span></h2>
+    <p class="contact__text reveal-up" data-i18n="contact_text">Per opere, commissioni o semplicemente per parlare.</p>
+    <div class="contact__links reveal-up" id="contactLinks"></div>
+  </section>
+</main>
+
+<footer class="footer">
+  <span>© <span id="year"></span> sunshyray</span>
+  <a href="#top" data-i18n="top">torna su ↑</a>
+</footer>
+
+<!-- MODAL -->
+<div class="modal" id="modal" aria-hidden="true" role="dialog" aria-modal="true">
+  <button class="modal__close" type="button" aria-label="Chiudi"><span></span><span></span></button>
+  <div class="modal__inner">
+    <div class="modal__media"><img alt="" id="mImg"></div>
+    <div class="modal__info">
+      <div class="modal__num m-in" id="mNum"></div>
+      <h3 class="modal__title m-in" id="mTitle"></h3>
+      <dl class="modal__meta m-in" id="mMeta"></dl>
+      <p class="modal__desc m-in" id="mDesc"></p>
+      <div class="modal__price m-in" id="mPrice"></div>
+      <div class="modal__actions m-in" id="mActions"></div>
+      <div class="modal__nav m-in">
+        <button type="button" id="mPrev" data-i18n="prev">← precedente</button>
+        <button type="button" id="mNext" data-i18n="next">successiva →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

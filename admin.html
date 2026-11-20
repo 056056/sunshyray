@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>sunshyray — studio</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0c0a0a">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0c0a0a;--ink-2:#171313;--ink-3:#221c1c;--bone:#ece5d8;--dim:#a59d90;--red:#c3191f;--line:rgba(236,229,216,.14);--ok:#7bd48a;--serif:"Cormorant Garamond",Georgia,serif;--sans:"Manrope",system-ui,sans-serif;--ease:cubic-bezier(.16,1,.3,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink);color:var(--bone);font-family:var(--sans);font-size:16px;line-height:1.5;min-height:100svh;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+a{color:inherit}
+.wrap{max-width:760px;margin:0 auto;padding:24px 16px 80px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:28px}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-style:italic;font-size:26px;text-decoration:none}
+.logo svg{width:34px}
+.small-btn{font-size:13px;color:var(--dim);text-decoration:underline;text-underline-offset:3px}
+h1{font-family:var(--serif);font-weight:300;font-style:italic;font-size:clamp(40px,9vw,64px);line-height:1;margin-bottom:10px}
+.lead{color:var(--dim);margin-bottom:28px}
+.tabs{display:flex;gap:6px;background:var(--ink-2);padding:6px;border-radius:99px;margin-bottom:28px;position:sticky;top:10px;z-index:5;border:1px solid var(--line)}
+.tabs button{flex:1;padding:12px 8px;border-radius:99px;font-size:14px;font-weight:500;color:var(--dim);transition:background .3s,color .3s}
+.tabs button.on{background:var(--bone);color:var(--ink)}
+.panel{display:none;animation:fade .5s var(--ease)}
+.panel.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+.drop{position:relative;display:grid;place-items:center;text-align:center;min-height:260px;border:1.5px dashed rgba(236,229,216,.35);border-radius:22px;padding:28px;cursor:pointer;transition:border-color .3s,background .3s;overflow:hidden;background:var(--ink-2)}
+.drop:hover,.drop.over{border-color:var(--red);background:#1d1414}
+.drop .big{font-family:var(--serif);font-style:italic;font-size:30px;line-height:1.1;margin:10px 0 6px}
+.drop .hint{color:var(--dim);font-size:14px}
+.drop svg.sp{width:56px;color:var(--red);animation:spin 10s linear infinite}
+.drop img{max-height:420px;width:auto;max-width:100%;border-radius:8px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.drop .change{margin-top:12px;font-size:13px;color:var(--dim)}
+.drop input{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.field{margin-top:18px}
+.field label{display:block;font-size:13px;font-weight:500;letter-spacing:.04em;margin-bottom:7px;color:var(--bone)}
+.field label small{color:var(--dim);font-weight:400}
+.field input,.field textarea{width:100%;background:var(--ink-2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:16px;outline:none;transition:border-color .3s}
+.field textarea{min-height:120px;resize:vertical;line-height:1.5}
+.field input:focus,.field textarea:focus{border-color:var(--bone)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.status{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.status label{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border:1px solid var(--line);border-radius:14px;cursor:pointer;font-size:15px;transition:background .3s,border-color .3s}
+.status input{display:none}
+.status label::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--ok)}
+.status label.sold::before{background:var(--red)}
+.status input:checked+span{font-weight:600}
+.status label:has(input:checked){border-color:var(--bone);background:var(--ink-3)}
+details{margin-top:22px;border:1px solid var(--line);border-radius:14px;padding:4px 16px 16px;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 0 0;font-size:14px;color:var(--dim)}
+details[open] summary{margin-bottom:4px}
+
+.go{margin-top:28px;width:100%;padding:18px;border-radius:99px;background:var(--red);color:var(--bone);font-size:17px;font-weight:600;letter-spacing:.03em;transition:transform .2s,opacity .3s}
+.go:active{transform:scale(.98)}
+.go:disabled{opacity:.4;cursor:not-allowed}
+.ghost{margin-top:10px;width:100%;padding:14px;border-radius:99px;border:1px solid var(--line);color:var(--dim)}
+
+.list{display:grid;gap:12px}
+.item{display:grid;grid-template-columns:84px 1fr;gap:14px;padding:12px;background:var(--ink-2);border:1px solid var(--line);border-radius:18px;align-items:center}
+.item img{width:84px;height:84px;object-fit:cover;border-radius:10px}
+.item h3{font-family:var(--serif);font-style:italic;font-weight:400;font-size:22px;line-height:1.1}
+.item .m{font-size:13px;color:var(--dim);margin:2px 0 8px}
+.item .acts{display:flex;flex-wrap:wrap;gap:6px}
+.item .acts button{font-size:13px;padding:7px 12px;border-radius:99px;border:1px solid var(--line)}
+.item .acts button:hover{border-color:var(--bone)}
+.item .acts .del{color:#ff8a8a}
+.pill-s{display:inline-flex;align-items:center;gap:6px;font-size:12px}
+.pill-s::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.pill-s.sold::before{background:var(--red)}
+.note{font-size:14px;color:var(--dim);background:var(--ink-2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:18px}
+.note b{color:var(--bone)}
+.note ol{padding-left:20px;margin-top:6px}
+.note li{margin:4px 0}
+.err{color:#ff8a8a;font-size:14px;margin-top:10px;min-height:1em}
+
+/* overlay */
+.ov{position:fixed;inset:0;z-index:50;background:rgba(12,10,10,.92);backdrop-filter:blur(6px);display:none;place-items:center;text-align:center;padding:24px}
+.ov.on{display:grid;animation:fade .4s var(--ease)}
+.ov svg{width:90px;color:var(--red);animation:spin 2.4s linear infinite}
+.ov.done svg{animation:none;color:var(--ok)}
+.ov p{font-family:var(--serif);font-style:italic;font-size:30px;margin-top:18px}
+.ov small{display:block;color:var(--dim);margin-top:8px;font-size:14px;max-width:340px;margin-inline:auto}
+.ov button{margin-top:24px;padding:14px 30px;border-radius:99px;background:var(--bone);color:var(--ink);font-weight:600;display:none}
+.ov.done button,.ov.fail button{display:inline-block}
+.ov.fail svg{animation:none;color:#ff8a8a}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="./" title="Vai al sito">
+      <svg viewBox="0 0 64 64"><ellipse cx="20" cy="32" rx="12" ry="7.5" fill="#c3191f"/><circle cx="20" cy="32" r="4.5" fill="#ece5d8"/><circle cx="20" cy="32" r="2" fill="#0c0a0a"/><ellipse cx="44" cy="32" rx="12" ry="7.5" fill="#ece5d8"/><circle cx="44" cy="32" r="4.5" fill="#c3191f"/><circle cx="44" cy="32" r="2" fill="#0c0a0a"/></svg>
+      studio
+    </a>
+    <div style="display:flex;gap:16px">
+      <a class="small-btn" href="./" target="_blank">vedi il sito ↗</a>
+      <button class="small-btn" id="logout" hidden>esci</button>
+    </div>
+  </header>
+
+  <!-- LOGIN -->
+  <section id="login" hidden>
+    <h1>Ciao ✦</h1>
+    <p class="lead">Inserisci la chiave di accesso. Lo fai solo la prima volta: poi il telefono o il computer se la ricordano.</p>
+    <div class="field"><label for="tok">Chiave di accesso</label><input id="tok" type="password" autocomplete="off" placeholder="github_pat_..."></div>
+    <div class="field" id="repoField" hidden><label for="repo">Repository <small>(utente/nome-repo)</small></label><input id="repo" placeholder="utente/sunshyray"></div>
+    <p class="err" id="loginErr"></p>
+    <button class="go" id="loginBtn">Entra</button>
+  </section>
+
+  <!-- APP -->
+  <section id="app" hidden>
+    <div class="tabs">
+      <button data-t="new" class="on">＋ Nuova</button>
+      <button data-t="list">Le mie opere</button>
+      <button data-t="bio">Bio</button>
+    </div>
+
+    <!-- NEW / EDIT -->
+    <div class="panel on" id="p-new">
+      <h1 id="formTitle">Nuova opera</h1>
+      <p class="lead" id="formLead">Trascina qui la foto del quadro (o toccala per sceglierla), scrivi due righe e premi Pubblica.</p>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept="image/*">
+        <div id="dropEmpty">
+          <svg class="sp" viewBox="-100 -100 200 200"><path id="spD" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg>
+          <div class="big">Trascina qui la foto</div>
+          <div class="hint">oppure tocca per sceglierla o scattarla</div>
+        </div>
+        <div id="dropFull" hidden><img id="preview" alt=""><div class="change">tocca per cambiare foto</div></div>
+      </label>
+
+      <div class="field"><label for="f-titolo">Titolo *</label><input id="f-titolo" placeholder="es. Vortice rosso"></div>
+      <div class="field"><label for="f-desc">Descrizione</label><textarea id="f-desc" placeholder="Cosa racconta questo quadro?"></textarea></div>
+      <div class="row">
+        <div class="field"><label for="f-anno">Anno</label><input id="f-anno" inputmode="numeric"></div>
+        <div class="field"><label for="f-prezzo">Prezzo <small>(vuoto = su richiesta)</small></label><input id="f-prezzo" placeholder="es. 350 €"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="f-tecnica">Tecnica</label><input id="f-tecnica" placeholder="es. Acrilico su tela"></div>
+        <div class="field"><label for="f-dim">Dimensioni</label><input id="f-dim" placeholder="es. 50 × 70 cm"></div>
+      </div>
+      <div class="field"><label>Stato</label>
+        <div class="status">
+          <label><input type="radio" name="stato" value="disponibile" checked><span>Disponibile</span></label>
+          <label class="sold"><input type="radio" name="stato" value="venduta"><span>Venduta</span></label>
+        </div>
+      </div>
+      <details>
+        <summary>Versione inglese (facoltativa)</summary>
+        <div class="field"><label for="f-titolo-en">Title</label><input id="f-titolo-en"></div>
+        <div class="field"><label for="f-desc-en">Description</label><textarea id="f-desc-en"></textarea></div>
+        <div class="field"><label for="f-tecnica-en">Technique</label><input id="f-tecnica-en" placeholder="e.g. Acrylic on canvas"></div>
+      </details>
+      <button class="go" id="publish">Pubblica ✦</button>
+      <button class="ghost" id="cancelEdit" hidden>Annulla modifiche</button>
+    </div>
+
+    <!-- LIST -->
+    <div class="panel" id="p-list">
+      <h1>Le mie opere</h1>
+      <p class="lead">La prima in alto è la prima che si vede sul sito. Usa ↑ ↓ per cambiare l'ordine.</p>
+      <div class="list" id="list"></div>
+    </div>
+
+    <!-- BIO -->
+    <div class="panel" id="p-bio">
+      <h1>Bio e contatti</h1>
+      <p class="lead">Questi testi compaiono nella pagina principale.</p>
+      <div class="field"><label for="b-it">Bio (italiano)</label><textarea id="b-it" style="min-height:170px"></textarea></div>
+      <div class="field"><label for="b-en">Bio (inglese) <small>(facoltativa)</small></label><textarea id="b-en" style="min-height:170px"></textarea></div>
+      <div class="field"><label for="b-ig">Instagram <small>(solo il nome, senza @)</small></label><input id="b-ig" placeholder="sunshyray"></div>
+      <div class="field"><label for="b-mail">Email</label><input id="b-mail" type="email" placeholder="nome@email.com"></div>
+      <div class="field"><label for="b-wa">WhatsApp <small>(con prefisso, es. 393331234567, facoltativo)</small></label><input id="b-wa" inputmode="tel"></div>
+      <button class="go" id="saveBio">Salva ✦</button>
+    </div>
+  </section>
+</div>
+
+<div class="ov" id="ov">
+  <div>
+    <svg viewBox="-100 -100 200 200"><path id="spO" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/></svg>
+    <p id="ovMsg">Un attimo…</p>
+    <small id="ovSub"></small>
+    <button id="ovBtn">Ok</button>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
