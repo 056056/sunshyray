@@ -185,7 +185,7 @@
       const kind = ratio > 1.15 ? 'wide' : ratio < .85 ? 'tall' : 'sq';
       const a = document.createElement('article');
       a.className = `piece piece--${kind}`; a.dataset.i = i;
-      a.style.cssText = `--off:${OFF[i % OFF.length]}px;--d:${(i % 3) * .18}s;--lt:${LT[i % LT.length]}deg;--sd:${6 + (i % 4) * 1.1}s;--sdl:-${(i * 1.7).toFixed(1)}s`;
+      a.style.cssText = `--off:${OFF[i % OFF.length]}px;--d:${(i % 3) * .18}s;--lt:${LT[i % LT.length]}deg;--sd:${11 + (i % 4) * 1.5}s;--sdl:-${(i * 1.7).toFixed(1)}s`;
       a.innerHTML = `
         <div class="piece__hang" style="--tilt:${TILT[i % TILT.length]}deg">
           <button type="button" class="piece__canvas" aria-label="${esc(L(w, 'titolo'))}">
