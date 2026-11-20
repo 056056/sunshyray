@@ -92,6 +92,22 @@ details[open] summary{margin-bottom:4px}
 .ov button{margin-top:24px;padding:14px 30px;border-radius:99px;background:var(--bone);color:var(--ink);font-weight:600;display:none}
 .ov.done button,.ov.fail button{display:inline-block}
 .ov.fail svg{animation:none;color:var(--red)}
+
+/* ritaglio */
+.crop{margin-top:16px;background:var(--ink-2);border:1px solid var(--line);border-radius:22px;padding:16px}
+.cropTip{font-size:14px;color:var(--dim);margin-bottom:14px}
+.cropTip b{color:var(--bone)}
+.crop__wrap{display:grid;place-items:center;background:#2a2622;border-radius:12px;padding:22px;overflow:hidden}
+.crop__stage{position:relative;display:inline-block;touch-action:none;user-select:none;-webkit-user-select:none}
+.crop__stage img{display:block;max-width:100%;max-height:62svh;width:auto;pointer-events:none}
+.crop__stage svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#cropShade{fill:rgba(0,0,0,.5)}
+#cropPoly{fill:none;stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke;stroke-dasharray:6 4}
+.hdl{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:3px solid #fff;background:rgba(176,36,28,.85);box-shadow:0 2px 8px rgba(0,0,0,.5);touch-action:none;cursor:grab}
+.hdl:active{cursor:grabbing;transform:scale(1.15)}
+.go--s{margin-top:10px;padding:14px}
+.h2s{font-family:var(--serif);font-weight:400;font-size:30px;margin:44px 0 14px}
+.item.nb img{object-fit:cover}
 </style>
 </head>
 <body>
@@ -120,15 +136,16 @@ details[open] summary{margin-bottom:4px}
   <!-- APP -->
   <section id="app" hidden>
     <div class="tabs">
-      <button data-t="new" class="on">＋ Nuova</button>
-      <button data-t="list">Le mie opere</button>
+      <button data-t="new" class="on">＋ Opera</button>
+      <button data-t="list">Opere</button>
+      <button data-t="nb">Quaderno</button>
       <button data-t="bio">Bio</button>
     </div>
 
-    <!-- NEW / EDIT -->
+    <!-- NUOVA / MODIFICA OPERA -->
     <div class="panel on" id="p-new">
       <h1 id="formTitle">Nuova opera</h1>
-      <p class="lead" id="formLead">Trascina qui la foto del quadro (o toccala per sceglierla), scrivi due righe e premi Pubblica.</p>
+      <p class="lead" id="formLead">Scegli la foto del quadro, poi segna i 4 angoli: la foto viene raddrizzata e messa sulla tela. Poi scrivi due righe e premi Pubblica.</p>
       <label class="drop" id="drop">
         <input type="file" id="file" accept="image/*">
         <div id="dropEmpty">
@@ -138,16 +155,35 @@ details[open] summary{margin-bottom:4px}
         </div>
         <div id="dropFull" hidden><img id="preview" alt=""><div class="change">tocca per cambiare foto</div></div>
       </label>
+      <button class="ghost" id="recrop" hidden>Sistema di nuovo gli angoli</button>
+
+      <!-- ritaglio a 4 angoli -->
+      <div class="crop" id="crop" hidden>
+        <p class="cropTip"><b>Trascina i 4 pallini rossi sugli angoli del quadro.</b> Così la foto diventa dritta, senza muro intorno, e si appoggia bene sulla tela.</p>
+        <div class="crop__wrap"><div class="crop__stage" id="stage">
+          <img id="cropImg" alt="">
+          <svg viewBox="0 0 1 1" preserveAspectRatio="none"><path id="cropShade" fill-rule="evenodd"/><polygon id="cropPoly"/></svg>
+          <button type="button" class="hdl" data-k="0" aria-label="angolo in alto a sinistra"></button>
+          <button type="button" class="hdl" data-k="1" aria-label="angolo in alto a destra"></button>
+          <button type="button" class="hdl" data-k="2" aria-label="angolo in basso a destra"></button>
+          <button type="button" class="hdl" data-k="3" aria-label="angolo in basso a sinistra"></button>
+        </div></div>
+        <div class="row">
+          <button class="ghost" id="cropSkip">Usa la foto intera</button>
+          <button class="go go--s" id="cropOk">Raddrizza ✓</button>
+        </div>
+      </div>
 
       <div class="field"><label for="f-titolo">Titolo *</label><input id="f-titolo" placeholder="es. Vortice rosso"></div>
       <div class="field"><label for="f-desc">Descrizione</label><textarea id="f-desc" placeholder="Cosa racconta questo quadro? Perché l'hai dipinto?"></textarea></div>
       <div class="row">
+        <div class="field"><label for="f-dim">Dimensioni <small>(larghezza × altezza)</small></label><input id="f-dim" placeholder="es. 50 × 70 cm"></div>
         <div class="field"><label for="f-anno">Anno</label><input id="f-anno" inputmode="numeric"></div>
-        <div class="field"><label for="f-prezzo">Prezzo <small>(vuoto = su richiesta)</small></label><input id="f-prezzo" placeholder="es. 350 €"></div>
       </div>
+      <p class="note" style="margin-top:10px">Le dimensioni servono anche al sito: la tela viene mostrata <b>con le proporzioni giuste</b> e <b>più grande o più piccola</b> rispetto alle altre, come dal vero.</p>
       <div class="row">
         <div class="field"><label for="f-tecnica">Tecnica</label><input id="f-tecnica" placeholder="es. Acrilico su tela"></div>
-        <div class="field"><label for="f-dim">Dimensioni</label><input id="f-dim" placeholder="es. 50 × 70 cm"></div>
+        <div class="field"><label for="f-prezzo">Prezzo <small>(vuoto = su richiesta)</small></label><input id="f-prezzo" placeholder="es. 350 €"></div>
       </div>
       <div class="field"><label>Stato</label>
         <div class="status">
@@ -165,11 +201,30 @@ details[open] summary{margin-bottom:4px}
       <button class="ghost" id="cancelEdit" hidden>Annulla modifiche</button>
     </div>
 
-    <!-- LIST -->
+    <!-- ELENCO OPERE -->
     <div class="panel" id="p-list">
       <h1>Le mie opere</h1>
       <p class="lead">La prima in alto è la prima che si vede sul sito. Usa ↑ ↓ per cambiare l'ordine.</p>
       <div class="list" id="list"></div>
+    </div>
+
+    <!-- QUADERNO -->
+    <div class="panel" id="p-nb">
+      <h1>Il mio quaderno</h1>
+      <p class="lead">Pagine, schizzi, appunti. Qui la foto va bene così com'è: niente ritaglio.</p>
+      <label class="drop" id="nbDrop">
+        <input type="file" id="nbFile" accept="image/*">
+        <div id="nbEmpty">
+          <div class="big">Aggiungi una pagina</div>
+          <div class="hint">trascina qui la foto, oppure tocca per sceglierla o scattarla</div>
+        </div>
+        <div id="nbFull" hidden><img id="nbPreview" alt=""><div class="change">tocca per cambiare foto</div></div>
+      </label>
+      <div class="field"><label for="nb-nota">Nota scritta a mano <small>(facoltativa)</small></label><input id="nb-nota" placeholder="es. notte di marzo"></div>
+      <div class="field"><label for="nb-nota-en">Nota in inglese <small>(facoltativa)</small></label><input id="nb-nota-en"></div>
+      <button class="go" id="nbAdd">Aggiungi al quaderno</button>
+      <h2 class="h2s">Pagine nel quaderno</h2>
+      <div class="list" id="nbList"></div>
     </div>
 
     <!-- BIO -->
@@ -181,7 +236,7 @@ details[open] summary{margin-bottom:4px}
       <div class="field"><label for="m-en">Frase d'apertura in inglese <small>(facoltativa)</small></label><textarea id="m-en" style="min-height:90px"></textarea></div>
       <div class="field"><label for="b-it">Bio (italiano)</label><textarea id="b-it" style="min-height:170px"></textarea></div>
       <div class="field"><label for="b-en">Bio (inglese) <small>(facoltativa)</small></label><textarea id="b-en" style="min-height:170px"></textarea></div>
-      <div class="field"><label for="b-ig">Instagram <small>(solo il nome, senza @)</small></label><input id="b-ig" placeholder="sunshyray"></div>
+      <div class="field"><label for="b-ig">Instagram <small>(solo il nome, senza @)</small></label><input id="b-ig" placeholder="sunshyr4y"></div>
       <div class="field"><label for="b-mail">Email</label><input id="b-mail" type="email" placeholder="nome@email.com"></div>
       <div class="field"><label for="b-wa">WhatsApp <small>(con prefisso, es. 393331234567, facoltativo)</small></label><input id="b-wa" inputmode="tel"></div>
       <button class="go" id="saveBio">Salva</button>

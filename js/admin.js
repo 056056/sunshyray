@@ -3,18 +3,18 @@
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
 
-  /* ---------- spiral icons ---------- */
-  const spiral = (turns) => { const max = turns * Math.PI * 2, b = 90 / max; let d = ''; for (let a = 0; a <= max; a += .12) { const r = b * a; d += (a ? 'L' : 'M') + (r * Math.cos(a)).toFixed(1) + ' ' + (r * Math.sin(a)).toFixed(1); } return d; };
+  /* ---------- icone a spirale ---------- */
+  const spiral = turns => { const max = turns * Math.PI * 2, b = 90 / max; let d = ''; for (let a = 0; a <= max; a += .12) { const r = b * a; d += (a ? 'L' : 'M') + (r * Math.cos(a)).toFixed(1) + ' ' + (r * Math.sin(a)).toFixed(1); } return d; };
   $('#spD').setAttribute('d', spiral(3)); $('#spO').setAttribute('d', spiral(4));
 
-  /* ---------- storage ---------- */
+  /* ---------- memoria del browser ---------- */
   const store = {
     get: k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
     set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
     del: k => { try { localStorage.removeItem(k); } catch (e) {} }
   };
 
-  /* ---------- repo detection ---------- */
+  /* ---------- quale repository ---------- */
   function detectRepo() {
     const cfg = (window.SUNSHYRAY && window.SUNSHYRAY.repo) || store.get('ss_repo');
     if (cfg) return cfg;
@@ -29,9 +29,9 @@
   let REPO = detectRepo();
   let TOKEN = store.get('ss_token');
 
-  /* ---------- GitHub API ---------- */
+  /* ---------- GitHub ---------- */
   async function api(path, opts = {}) {
-    const r = await fetch(`https://api.github.com/repos/${REPO}${path ? "/" + path : ""}`, {
+    const r = await fetch(`https://api.github.com/repos/${REPO}${path ? '/' + path : ''}`, {
       ...opts, cache: 'no-store',
       headers: { 'Authorization': 'Bearer ' + TOKEN, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(opts.body ? { 'Content-Type': 'application/json' } : {}) }
     });
@@ -40,44 +40,43 @@
   }
   const b64encode = str => { const bytes = new TextEncoder().encode(str); let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(s); };
   const b64decode = b64 => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\n/g, '')), c => c.charCodeAt(0)));
-
   async function getJSON(path, fallback) {
     try { const f = await api('contents/' + path); return { data: JSON.parse(b64decode(f.content)), sha: f.sha }; }
     catch (e) { if (e.status === 404) return { data: fallback, sha: null }; throw e; }
   }
-  function putFile(path, base64, message, sha) {
-    return api('contents/' + path, { method: 'PUT', body: JSON.stringify({ message, content: base64, ...(sha ? { sha } : {}) }) });
-  }
+  const putFile = (path, base64, message, sha) => api('contents/' + path, { method: 'PUT', body: JSON.stringify({ message, content: base64, ...(sha ? { sha } : {}) }) });
   const putJSON = (path, data, msg, sha) => putFile(path, b64encode(JSON.stringify(data, null, 1) + '\n'), msg, sha);
   async function deleteFile(path, message) {
     try { const f = await api('contents/' + path); await api('contents/' + path, { method: 'DELETE', body: JSON.stringify({ message, sha: f.sha }) }); } catch (e) { if (e.status !== 404) throw e; }
   }
-  // save the JSON, retrying once if somebody changed it in the meantime
-  async function updateWorks(mutator, msg) {
+  // modifica un elenco (opere o quaderno), riprovando se nel frattempo è cambiato
+  async function updateList(path, mutator, msg) {
     for (let attempt = 0; attempt < 3; attempt++) {
-      const { data, sha } = await getJSON('data/opere.json', []);
-      const next = mutator(data);
-      try { await putJSON('data/opere.json', next, msg, sha); return next; }
+      const { data, sha } = await getJSON(path, []);
+      const next = mutator(Array.isArray(data) ? data : []);
+      try { await putJSON(path, next, msg, sha); return next; }
       catch (e) { if (e.status !== 409 && e.status !== 422) throw e; }
     }
     throw new Error('conflict');
   }
+  const WORKS = 'data/opere.json', NOTES = 'data/quaderno.json';
 
-  /* ---------- overlay ---------- */
+  /* ---------- schermata di attesa ---------- */
   const ov = $('#ov');
-  function busy(msg, sub = '') { ov.className = 'ov on'; $('#ovMsg').textContent = msg; $('#ovSub').textContent = sub; }
-  function done(msg, sub = '') { ov.className = 'ov on done'; $('#ovMsg').textContent = msg; $('#ovSub').textContent = sub; }
+  const busy = (msg, sub = '') => { ov.className = 'ov on'; $('#ovMsg').textContent = msg; $('#ovSub').textContent = sub; };
+  const done = (msg, sub = '') => { ov.className = 'ov on done'; $('#ovMsg').textContent = msg; $('#ovSub').textContent = sub; };
+  const idle = () => { ov.className = 'ov'; };
+  function say(msg, sub) { ov.className = 'ov on fail'; $('#ovMsg').textContent = msg; $('#ovSub').textContent = sub; }
   function fail(e) {
     console.error(e);
-    ov.className = 'ov on fail';
-    $('#ovMsg').textContent = 'Qualcosa non ha funzionato';
-    $('#ovSub').textContent = e.status === 401 ? 'La chiave di accesso non è più valida. Premi "esci" e inseriscine una nuova.'
-      : (e.message === 'image' ? 'Questa foto non si riesce ad aprire. Prova con una foto JPG o PNG.'
+    say('Qualcosa non ha funzionato',
+      e.status === 401 ? 'La chiave di accesso non è più valida. Premi "esci" e inseriscine una nuova.'
+      : e.message === 'image' ? 'Questa foto non si riesce ad aprire. Prova con una foto JPG o PNG.'
       : 'Controlla la connessione e riprova. (' + (e.detail || e.message) + ')');
   }
-  $('#ovBtn').onclick = () => { ov.className = 'ov'; };
+  $('#ovBtn').onclick = idle;
 
-  /* ---------- login ---------- */
+  /* ---------- accesso ---------- */
   async function tryLogin() {
     const r = await api('');
     if (!r.permissions || !r.permissions.push) { const e = new Error('nopush'); e.status = 403; throw e; }
@@ -85,8 +84,8 @@
   async function boot() {
     if (!REPO) $('#repoField').hidden = false;
     if (!TOKEN || !REPO) { $('#login').hidden = false; return; }
-    try { busy('Apro lo studio…'); await tryLogin(); ov.className = 'ov'; showApp(); }
-    catch (e) { ov.className = 'ov'; $('#login').hidden = false; $('#loginErr').textContent = 'La chiave salvata non funziona più: inseriscine una nuova.'; }
+    try { busy('Apro lo studio…'); await tryLogin(); idle(); showApp(); }
+    catch (e) { idle(); $('#login').hidden = false; $('#loginErr').textContent = 'La chiave salvata non funziona più: inseriscine una nuova.'; }
   }
   $('#loginBtn').onclick = async () => {
     TOKEN = $('#tok').value.trim();
@@ -96,66 +95,153 @@
     try {
       busy('Controllo la chiave…'); await tryLogin();
       store.set('ss_token', TOKEN); store.set('ss_repo', REPO);
-      ov.className = 'ov'; $('#login').hidden = true; showApp();
+      idle(); $('#login').hidden = true; showApp();
     } catch (e) {
-      ov.className = 'ov';
+      idle();
       $('#loginErr').textContent = e.status === 404 ? 'Repository non trovato, oppure la chiave non ha accesso a questo repository.' : e.status === 401 ? 'Chiave non valida.' : e.status === 403 ? 'La chiave non ha il permesso di scrittura (Contents: Read and write).' : 'Errore di connessione.';
     }
   };
   $('#logout').onclick = () => { if (confirm('Vuoi uscire? Dovrai reinserire la chiave.')) { store.del('ss_token'); location.reload(); } };
+  function showApp() { $('#app').hidden = false; $('#logout').hidden = false; loadList(); loadNotes(); loadBio(); }
 
-  function showApp() { $('#app').hidden = false; $('#logout').hidden = false; loadList(); loadBio(); }
-
-  /* ---------- tabs ---------- */
+  /* ---------- schede ---------- */
   function tab(name) {
     $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === name));
     $$('.panel').forEach(p => p.classList.toggle('on', p.id === 'p-' + name));
     scrollTo({ top: 0, behavior: 'smooth' });
   }
-  $$('.tabs button').forEach(b => b.onclick = () => { if (b.dataset.t === 'new' && editing) resetForm(); tab(b.dataset.t); if (b.dataset.t === 'list') loadList(); });
+  $$('.tabs button').forEach(b => b.onclick = () => {
+    if (b.dataset.t === 'new' && editing) resetForm();
+    tab(b.dataset.t);
+    if (b.dataset.t === 'list') loadList();
+    if (b.dataset.t === 'nb') loadNotes();
+  });
 
-  /* ---------- image handling ---------- */
-  let photo = null; // {full: Blob, thumb: Blob, w, h}
-  const drop = $('#drop'), fileIn = $('#file');
-  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
-  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
-  drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
-  fileIn.addEventListener('change', () => { if (fileIn.files[0]) handleFile(fileIn.files[0]); });
-  // also allow dropping anywhere on the page
-  addEventListener('dragover', e => e.preventDefault());
-  addEventListener('drop', e => { e.preventDefault(); if ($('#p-new').classList.contains('on') && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
-
+  /* ---------- immagini: apertura e ridimensionamento ---------- */
   async function decode(file) {
     try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); }
-    catch (e) {
-      return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('image')); i.src = URL.createObjectURL(file); });
-    }
+    catch (e) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('image')); i.src = URL.createObjectURL(file); }); }
   }
-  function resize(img, max, q) {
-    const s = Math.min(1, max / Math.max(img.width, img.height));
-    const w = Math.round(img.width * s), h = Math.round(img.height * s);
-    const c = document.createElement('canvas'); c.width = w; c.height = h;
-    const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, w, h);
-    return new Promise(r => c.toBlob(b => r({ blob: b, w, h }), 'image/jpeg', q));
+  function scaled(src, max) {
+    const s = Math.min(1, max / Math.max(src.width, src.height));
+    const c = document.createElement('canvas'); c.width = Math.round(src.width * s); c.height = Math.round(src.height * s);
+    const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, c.width, c.height);
+    return c;
   }
-  async function handleFile(file) {
-    try {
-      busy('Preparo la foto…');
-      const img = await decode(file);
-      const full = await resize(img, 2200, .86);
-      const thumb = await resize(img, 900, .8);
-      photo = { full: full.blob, thumb: thumb.blob, w: full.w, h: full.h };
-      $('#preview').src = URL.createObjectURL(full.blob);
-      $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
-      ov.className = 'ov';
-      $('#f-titolo').focus({ preventScroll: true });
-    } catch (e) { fail(new Error('image')); }
-  }
+  const toBlob = (canvas, q) => new Promise(r => canvas.toBlob(r, 'image/jpeg', q));
   const blobB64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
   const slug = s => (s || 'opera').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'opera';
+  function wireDrop(zone, input, onFile, isActive) {
+    ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('over'); }));
+    ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('over'); }));
+    zone.addEventListener('drop', e => { e.stopPropagation(); const f = e.dataTransfer.files[0]; if (f) onFile(f); });
+    input.addEventListener('change', () => { if (input.files[0]) onFile(input.files[0]); input.value = ''; });
+    addEventListener('drop', e => { if (isActive() && e.dataTransfer.files[0]) { e.preventDefault(); onFile(e.dataTransfer.files[0]); } });
+  }
+  addEventListener('dragover', e => e.preventDefault());
+  addEventListener('drop', e => e.preventDefault());
 
-  /* ---------- form ---------- */
-  let editing = null; // id of work being edited
+  /* ---------- raddrizzamento prospettico ---------- */
+  // dai 4 angoli segnati sulla foto (in alto a sx, alto dx, basso dx, basso sx)
+  // ricava un rettangolo dritto: la "faccia" della tela
+  function squareToQuad(P) {
+    const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = P;
+    const dx3 = x0 - x1 + x2 - x3, dy3 = y0 - y1 + y2 - y3;
+    if (Math.abs(dx3) < 1e-9 && Math.abs(dy3) < 1e-9) return [x1 - x0, x3 - x0, x0, y1 - y0, y3 - y0, y0, 0, 0];
+    const dx1 = x1 - x2, dx2 = x3 - x2, dy1 = y1 - y2, dy2 = y3 - y2;
+    const det = dx1 * dy2 - dx2 * dy1;
+    const g = (dx3 * dy2 - dx2 * dy3) / det, h = (dx1 * dy3 - dx3 * dy1) / det;
+    return [x1 - x0 + g * x1, x3 - x0 + h * x3, x0, y1 - y0 + g * y1, y3 - y0 + h * y3, y0, g, h];
+  }
+  const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  function parseDims(s) {
+    const m = String(s || '').replace(/,/g, '.').match(/(\d+(?:\.\d+)?)\s*[x×X*]\s*(\d+(?:\.\d+)?)/);
+    return m ? parseFloat(m[1]) / parseFloat(m[2]) : 0;
+  }
+  function warp(src, corners, maxSide, ratioHint) {
+    const S = scaled(src, 3000), W = S.width, H = S.height;
+    const sd = S.getContext('2d').getImageData(0, 0, W, H).data;
+    const P = corners.map(p => [p.x * W, p.y * H]);
+    const qW = (dist(P[0], P[1]) + dist(P[3], P[2])) / 2, qH = (dist(P[0], P[3]) + dist(P[1], P[2])) / 2;
+    const ratio = ratioHint > 0 ? ratioHint : qW / qH;
+    const longSrc = Math.max(qW, qH) * (src.width / W);
+    const long = Math.min(maxSide, Math.max(400, longSrc));
+    const ow = Math.round(ratio >= 1 ? long : long * ratio), oh = Math.round(ratio >= 1 ? long / ratio : long);
+    const [a, b, c, d, e, f, g, h] = squareToQuad(P);
+    const out = document.createElement('canvas'); out.width = ow; out.height = oh;
+    const ox = out.getContext('2d'), od = ox.createImageData(ow, oh), D = od.data;
+    for (let y = 0; y < oh; y++) {
+      const v = (y + .5) / oh;
+      for (let x = 0; x < ow; x++) {
+        const u = (x + .5) / ow, den = g * u + h * v + 1;
+        let sx = (a * u + b * v + c) / den - .5, sy = (d * u + e * v + f) / den - .5;
+        if (sx < 0) sx = 0; if (sy < 0) sy = 0; if (sx > W - 1.001) sx = W - 1.001; if (sy > H - 1.001) sy = H - 1.001;
+        const ix = sx | 0, iy = sy | 0, fx = sx - ix, fy = sy - iy;
+        const i00 = (iy * W + ix) * 4, i10 = i00 + 4, i01 = i00 + W * 4, i11 = i01 + 4;
+        const o = (y * ow + x) * 4;
+        for (let k = 0; k < 3; k++) {
+          const top = sd[i00 + k] + (sd[i10 + k] - sd[i00 + k]) * fx;
+          const bot = sd[i01 + k] + (sd[i11 + k] - sd[i01 + k]) * fx;
+          D[o + k] = top + (bot - top) * fy;
+        }
+        D[o + 3] = 255;
+      }
+    }
+    ox.putImageData(od, 0, 0);
+    return out;
+  }
+
+  /* ---------- editor dei 4 angoli ---------- */
+  let src = null;        // foto originale aperta
+  let corners = null;    // 4 angoli scelti (0..1), oppure null = foto intera
+  let photoReady = false;
+  const stage = $('#stage');
+  const defaultCorners = () => [{ x: .06, y: .06 }, { x: .94, y: .06 }, { x: .94, y: .94 }, { x: .06, y: .94 }];
+  function drawCrop() {
+    $$('.hdl').forEach((h, k) => { h.style.left = (corners[k].x * 100) + '%'; h.style.top = (corners[k].y * 100) + '%'; });
+    const pts = corners.map(p => `${p.x},${p.y}`).join(' ');
+    $('#cropPoly').setAttribute('points', pts);
+    $('#cropShade').setAttribute('d', `M0 0H1V1H0Z M${corners.map(p => `${p.x} ${p.y}`).join(' L')}Z`);
+  }
+  $$('.hdl').forEach(h => {
+    h.addEventListener('pointerdown', e => {
+      e.preventDefault(); h.setPointerCapture(e.pointerId);
+      const k = +h.dataset.k;
+      const move = ev => {
+        const r = stage.getBoundingClientRect();
+        corners[k] = { x: Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)), y: Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height)) };
+        drawCrop();
+      };
+      const up = () => { h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up); };
+      h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
+    });
+  });
+  function openCrop(keep) {
+    if (!keep || !corners) corners = defaultCorners();
+    $('#cropImg').src = scaled(src, 1600).toDataURL('image/jpeg', .85);
+    $('#crop').hidden = false; $('#drop').hidden = true; $('#recrop').hidden = true;
+    drawCrop();
+    $('#crop').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  async function showPreview() {
+    const pv = corners ? warp(src, corners, 900, parseDims($('#f-dim').value)) : scaled(src, 900);
+    $('#preview').src = pv.toDataURL('image/jpeg', .85);
+    $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
+    $('#crop').hidden = true; $('#drop').hidden = false; $('#recrop').hidden = false;
+    photoReady = true;
+  }
+  $('#cropOk').onclick = async () => { busy('Raddrizzo la foto…'); await new Promise(r => setTimeout(r, 30)); try { await showPreview(); idle(); $('#f-titolo').focus({ preventScroll: true }); } catch (e) { fail(e); } };
+  $('#cropSkip').onclick = async () => { corners = null; await showPreview(); };
+  $('#recrop').onclick = () => openCrop(true);
+
+  async function handleFile(file) {
+    try { busy('Apro la foto…'); src = await decode(file); idle(); openCrop(false); }
+    catch (e) { fail(new Error('image')); }
+  }
+  wireDrop($('#drop'), $('#file'), handleFile, () => $('#p-new').classList.contains('on'));
+
+  /* ---------- modulo opera ---------- */
+  let editing = null;
   const F = { titolo: '#f-titolo', descrizione: '#f-desc', anno: '#f-anno', prezzo: '#f-prezzo', tecnica: '#f-tecnica', dimensioni: '#f-dim', titolo_en: '#f-titolo-en', descrizione_en: '#f-desc-en', tecnica_en: '#f-tecnica-en' };
   function readForm() {
     const o = {}; for (const k in F) o[k] = $(F[k]).value.trim();
@@ -163,37 +249,43 @@
     return o;
   }
   function resetForm() {
-    editing = null; photo = null;
+    editing = null; src = null; corners = null; photoReady = false;
     for (const k in F) $(F[k]).value = '';
     $('input[name=stato][value=disponibile]').checked = true;
-    $('#dropEmpty').hidden = false; $('#dropFull').hidden = true; fileIn.value = '';
+    $('#dropEmpty').hidden = false; $('#dropFull').hidden = true; $('#drop').hidden = false;
+    $('#crop').hidden = true; $('#recrop').hidden = true;
     $('#formTitle').textContent = 'Nuova opera';
-    $('#formLead').textContent = 'Trascina qui la foto del quadro (o toccala per sceglierla), scrivi due righe e premi Pubblica.';
+    $('#formLead').textContent = 'Scegli la foto del quadro, poi segna i 4 angoli: la foto viene raddrizzata e messa sulla tela. Poi scrivi due righe e premi Pubblica.';
     $('#publish').textContent = 'Pubblica'; $('#cancelEdit').hidden = true;
   }
   $('#cancelEdit').onclick = () => { resetForm(); tab('list'); };
 
   $('#publish').onclick = async () => {
     const data = readForm();
-    if (!editing && !photo) { busy(''); fail({ message: 'x', detail: 'manca la foto' }); $('#ovMsg').textContent = 'Manca la foto'; $('#ovSub').textContent = 'Trascina o scegli la foto del quadro.'; return; }
+    if (!$('#crop').hidden) { say('Prima gli angoli', 'Premi "Raddrizza" (o "Usa la foto intera") sotto la foto.'); return; }
+    if (!editing && !photoReady) { say('Manca la foto', 'Trascina o scegli la foto del quadro.'); return; }
     if (!data.titolo) { $('#f-titolo').focus(); $('#f-titolo').style.borderColor = 'var(--red)'; setTimeout(() => $('#f-titolo').style.borderColor = '', 1500); return; }
     try {
       let imgFields = {};
       const id = editing || (slug(data.titolo) + '-' + Date.now().toString(36));
-      if (photo) {
+      if (photoReady && src) {
+        busy('Preparo la foto…', 'Non chiudere la pagina');
+        await new Promise(r => setTimeout(r, 30));
+        const full = corners ? warp(src, corners, 2200, parseDims(data.dimensioni)) : scaled(src, 2200);
+        const thumbC = scaled(full, 900);
         const v = editing ? '-' + Date.now().toString(36) : '';
-        const full = `opere/${id}${v}.jpg`, thumb = `opere/${id}${v}-s.jpg`;
+        const fp = `opere/${id}${v}.jpg`, tp = `opere/${id}${v}-s.jpg`;
         busy('Carico la foto…', 'Non chiudere la pagina');
-        await putFile(full, await blobB64(photo.full), `Foto: ${data.titolo}`);
+        await putFile(fp, await blobB64(await toBlob(full, .86)), `Foto: ${data.titolo}`);
         busy('Quasi fatto…', 'Non chiudere la pagina');
-        await putFile(thumb, await blobB64(photo.thumb), `Miniatura: ${data.titolo}`);
-        imgFields = { img: full, thumb, w: photo.w, h: photo.h };
+        await putFile(tp, await blobB64(await toBlob(thumbC, .8)), `Miniatura: ${data.titolo}`);
+        imgFields = { img: fp, thumb: tp, w: full.width, h: full.height };
       } else busy('Salvo…');
       let oldImgs = null;
-      await updateWorks(list => {
+      await updateList(WORKS, list => {
         if (editing) {
           const i = list.findIndex(w => w.id === editing);
-          if (i > -1) { if (photo) oldImgs = [list[i].img, list[i].thumb]; list[i] = { ...list[i], ...data, ...imgFields }; }
+          if (i > -1) { if (imgFields.img) oldImgs = [list[i].img, list[i].thumb]; list[i] = { ...list[i], ...data, ...imgFields }; }
           return list;
         }
         return [{ id, ...imgFields, ...data }, ...list];
@@ -204,26 +296,29 @@
     } catch (e) { fail(e); }
   };
 
-  /* ---------- list ---------- */
-  let works = [];
+  /* ---------- elenchi ---------- */
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const rawUrl = p => `https://raw.githubusercontent.com/${REPO}/HEAD/${p}`;
+  const thumbImg = it => `<img src="${esc(rawUrl(it.thumb || it.img))}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${esc(it.thumb || it.img)}'">`;
+  const moveBtns = (i, n) => `<button data-a="up" ${i === 0 ? 'disabled style="opacity:.3"' : ''}>↑</button><button data-a="down" ${i === n - 1 ? 'disabled style="opacity:.3"' : ''}>↓</button>`;
+  const swap = (l, id, dir) => { const i = l.findIndex(x => x.id === id), j = i + (dir === 'up' ? -1 : 1); if (i > -1 && j >= 0 && j < l.length) [l[i], l[j]] = [l[j], l[i]]; return l; };
+
+  let works = [];
   async function loadList() {
     const box = $('#list');
     try {
-      works = (await getJSON('data/opere.json', [])).data;
-      if (!works.length) { box.innerHTML = '<p class="note">Ancora nessuna opera. Aggiungine una dalla scheda “＋ Nuova”.</p>'; return; }
+      works = (await getJSON(WORKS, [])).data || [];
+      if (!works.length) { box.innerHTML = '<p class="note">Ancora nessuna opera. Aggiungine una dalla scheda “＋ Opera”.</p>'; return; }
       box.innerHTML = works.map((w, i) => `
         <div class="item" data-i="${i}">
-          <img src="${esc(rawUrl(w.thumb || w.img))}" alt="" loading="lazy" onerror="this.src='${esc(w.thumb || w.img)}'">
+          ${thumbImg(w)}
           <div>
             <h3>${esc(w.titolo)}</h3>
-            <div class="m"><span class="pill-s ${w.stato === 'venduta' ? 'sold' : ''}">${w.stato === 'venduta' ? 'Venduta' : 'Disponibile'}</span>${w.prezzo ? ' · ' + esc(w.prezzo) : ''}</div>
+            <div class="m"><span class="pill-s ${w.stato === 'venduta' ? 'sold' : ''}">${w.stato === 'venduta' ? 'Venduta' : 'Disponibile'}</span>${w.prezzo ? ' · ' + esc(w.prezzo) : ''}${w.dimensioni ? ' · ' + esc(w.dimensioni) : ''}</div>
             <div class="acts">
               <button data-a="edit">Modifica</button>
               <button data-a="toggle">${w.stato === 'venduta' ? 'Segna disponibile' : 'Segna venduta'}</button>
-              <button data-a="up" ${i === 0 ? 'disabled style="opacity:.3"' : ''}>↑</button>
-              <button data-a="down" ${i === works.length - 1 ? 'disabled style="opacity:.3"' : ''}>↓</button>
+              ${moveBtns(i, works.length)}
               <button data-a="del" class="del">Elimina</button>
             </div>
           </div>
@@ -232,9 +327,9 @@
   }
   $('#list').addEventListener('click', async e => {
     const b = e.target.closest('button[data-a]'); if (!b) return;
-    const w = works[+b.closest('.item').dataset.i]; const a = b.dataset.a;
+    const w = works[+b.closest('.item').dataset.i], a = b.dataset.a;
     if (a === 'edit') {
-      editing = w.id; photo = null;
+      resetForm(); editing = w.id;
       for (const k in F) $(F[k]).value = w[k] || '';
       $(`input[name=stato][value=${w.stato === 'venduta' ? 'venduta' : 'disponibile'}]`).checked = true;
       $('#preview').src = rawUrl(w.img); $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
@@ -246,20 +341,76 @@
     try {
       if (a === 'toggle') {
         busy('Aggiorno…');
-        await updateWorks(l => l.map(x => x.id === w.id ? { ...x, stato: x.stato === 'venduta' ? 'disponibile' : 'venduta' } : x), 'Stato: ' + w.titolo);
+        await updateList(WORKS, l => l.map(x => x.id === w.id ? { ...x, stato: x.stato === 'venduta' ? 'disponibile' : 'venduta' } : x), 'Stato: ' + w.titolo);
         done('Fatto', 'Il sito si aggiorna tra un paio di minuti.');
       } else if (a === 'up' || a === 'down') {
-        busy('Sposto…');
-        await updateWorks(l => { const i = l.findIndex(x => x.id === w.id), j = i + (a === 'up' ? -1 : 1); if (i > -1 && j >= 0 && j < l.length) [l[i], l[j]] = [l[j], l[i]]; return l; }, 'Ordine opere');
-        ov.className = 'ov';
+        busy('Sposto…'); await updateList(WORKS, l => swap(l, w.id, a), 'Ordine opere'); idle();
       } else if (a === 'del') {
         if (!confirm(`Eliminare “${w.titolo}” dal sito? Non si può annullare.`)) return;
         busy('Elimino…');
-        await updateWorks(l => l.filter(x => x.id !== w.id), 'Elimino: ' + w.titolo);
+        await updateList(WORKS, l => l.filter(x => x.id !== w.id), 'Elimino: ' + w.titolo);
         for (const p of [w.img, w.thumb]) if (p) await deleteFile(p, 'Elimino foto: ' + w.titolo).catch(() => {});
         done('Eliminata', 'Il sito si aggiorna tra un paio di minuti.');
       }
       loadList();
+    } catch (err) { fail(err); }
+  });
+
+  /* ---------- quaderno ---------- */
+  let nbSrc = null, notes = [];
+  async function handleNbFile(file) {
+    try {
+      busy('Apro la foto…'); nbSrc = await decode(file);
+      $('#nbPreview').src = scaled(nbSrc, 900).toDataURL('image/jpeg', .85);
+      $('#nbEmpty').hidden = true; $('#nbFull').hidden = false; idle();
+    } catch (e) { fail(new Error('image')); }
+  }
+  wireDrop($('#nbDrop'), $('#nbFile'), handleNbFile, () => $('#p-nb').classList.contains('on'));
+  $('#nbAdd').onclick = async () => {
+    if (!nbSrc) { say('Manca la foto', 'Trascina o scegli la foto della pagina.'); return; }
+    try {
+      busy('Carico la pagina…', 'Non chiudere la pagina');
+      const id = 'pagina-' + Date.now().toString(36);
+      const full = scaled(nbSrc, 2000), th = scaled(full, 700);
+      const fp = `quaderno/${id}.jpg`, tp = `quaderno/${id}-s.jpg`;
+      await putFile(fp, await blobB64(await toBlob(full, .85)), 'Quaderno: nuova pagina');
+      await putFile(tp, await blobB64(await toBlob(th, .8)), 'Quaderno: miniatura');
+      const nota = $('#nb-nota').value.trim(), nota_en = $('#nb-nota-en').value.trim();
+      await updateList(NOTES, l => [{ id, img: fp, thumb: tp, w: full.width, h: full.height, nota, nota_en }, ...l], 'Quaderno: nuova pagina');
+      nbSrc = null; $('#nb-nota').value = ''; $('#nb-nota-en').value = '';
+      $('#nbEmpty').hidden = false; $('#nbFull').hidden = true;
+      done('Aggiunta al quaderno', 'Sarà visibile sul sito tra un paio di minuti.');
+      loadNotes();
+    } catch (e) { fail(e); }
+  };
+  async function loadNotes() {
+    const box = $('#nbList');
+    try {
+      notes = (await getJSON(NOTES, [])).data || [];
+      if (!notes.length) { box.innerHTML = '<p class="note">Il quaderno è vuoto: sul sito la sezione resta nascosta finché non aggiungi una pagina.</p>'; return; }
+      box.innerHTML = notes.map((n, i) => `
+        <div class="item nb" data-i="${i}">
+          ${thumbImg(n)}
+          <div>
+            <h3>${esc(n.nota || 'pagina senza nota')}</h3>
+            <div class="acts">${moveBtns(i, notes.length)}<button data-a="del" class="del">Elimina</button></div>
+          </div>
+        </div>`).join('');
+    } catch (e) { box.innerHTML = '<p class="note">Non riesco a caricare il quaderno. Controlla la connessione.</p>'; }
+  }
+  $('#nbList').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-a]'); if (!b) return;
+    const n = notes[+b.closest('.item').dataset.i], a = b.dataset.a;
+    try {
+      if (a === 'up' || a === 'down') { busy('Sposto…'); await updateList(NOTES, l => swap(l, n.id, a), 'Ordine quaderno'); idle(); }
+      else if (a === 'del') {
+        if (!confirm('Togliere questa pagina dal quaderno? Non si può annullare.')) return;
+        busy('Elimino…');
+        await updateList(NOTES, l => l.filter(x => x.id !== n.id), 'Quaderno: elimino pagina');
+        for (const p of [n.img, n.thumb]) if (p) await deleteFile(p, 'Quaderno: elimino foto').catch(() => {});
+        done('Eliminata', 'Il sito si aggiorna tra un paio di minuti.');
+      }
+      loadNotes();
     } catch (err) { fail(err); }
   });
 
@@ -272,7 +423,7 @@
     try {
       busy('Salvo…');
       const { data, sha } = await getJSON('data/sito.json', {});
-      for (const k in B) data[k] = $(B[k]).value.trim().replace(k === 'instagram' ? /^@/ : /^$/, '');
+      for (const k in B) { let v = $(B[k]).value.trim(); if (k === 'instagram') v = v.replace(/^@/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/[/?].*$/, ''); data[k] = v; }
       await putJSON('data/sito.json', data, 'Bio e contatti', sha);
       done('Salvato', 'Il sito si aggiorna tra un paio di minuti.');
     } catch (e) { fail(e); }

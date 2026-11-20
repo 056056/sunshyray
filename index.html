@@ -27,6 +27,7 @@
   <a href="#" class="sig" aria-label="sunshyray">sunshyray</a>
   <nav class="top__nav">
     <a href="#mostra" data-i18n="nav_works">opere</a>
+    <a href="#quaderno" data-i18n="nav_nb">quaderno</a>
     <a href="#chi" data-i18n="nav_bio">chi sono</a>
     <a href="#scrivimi" data-i18n="nav_contact">scrivimi</a>
     <button class="lang" type="button" aria-label="Lingua / Language"><span data-l="it">it</span> / <span data-l="en">en</span></button>
@@ -38,7 +39,6 @@
   <!-- INTRO / MANIFESTO -->
   <section class="intro">
     <div class="intro__text">
-      <p class="hand hand--red kicker" data-i18n="kicker">— dipinti di sunshyray</p>
       <h1 class="manifesto" id="manifesto" aria-live="off"></h1>
       <div class="doodle-eyes" aria-hidden="true">
         <svg viewBox="0 0 120 70" class="deye deye--red"><g class="lid">
@@ -52,7 +52,7 @@
           <path class="d thin" d="M28 19 l-5 -8 M44 12 l-2 -10 M61 9 l1 -10 M77 11 l3 -9 M92 18 l6 -7"/>
         </g></svg>
       </div>
-      <a href="#mostra" class="hand intro__go" data-i18n="go">entra nella mostra ↓</a>
+      <a href="#mostra" class="hand intro__go" data-i18n="go">guarda le opere ↓</a>
     </div>
 
     <figure class="hung" id="hung" hidden>
@@ -66,7 +66,7 @@
   <!-- MOSTRA -->
   <section class="show" id="mostra">
     <div class="show__head">
-      <h2 class="h2"><span data-i18n="works_title">La mostra</span><svg class="scribble-under" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M3 9 C 40 3, 70 12, 110 7 S 170 3, 197 8"/></svg></h2>
+      <h2 class="h2"><span data-i18n="works_title">Opere</span><svg class="scribble-under" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M3 9 C 40 3, 70 12, 110 7 S 170 3, 197 8"/></svg></h2>
       <p class="hand show__note" id="showNote"></p>
       <div class="filters" role="tablist">
         <button class="is-active" data-filter="all" data-i18n="f_all">tutte</button>
@@ -78,6 +78,13 @@
     <p class="hand empty" id="empty" hidden data-i18n="empty">nuovi quadri in arrivo…</p>
   </section>
 
+  <!-- QUADERNO -->
+  <section class="notebook" id="quaderno">
+    <h2 class="h2"><span data-i18n="nb_title">Il mio quaderno</span><svg class="scribble-under" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M3 8 C 45 3, 85 12, 125 6 S 180 4, 197 9"/></svg></h2>
+    <p class="hand show__note" data-i18n="nb_note">pagine, schizzi, appunti</p>
+    <div class="nb" id="nb"></div>
+  </section>
+
   <!-- CHI SONO -->
   <section class="about" id="chi">
     <h2 class="h2"><span data-i18n="bio_title">Chi sono</span><svg class="scribble-under" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M3 7 C 50 11, 90 2, 130 8 S 180 10, 197 5"/></svg></h2>
@@ -87,13 +94,6 @@
         <div class="letter__body" id="bioText"></div>
         <p class="letter__sign">sunshyray</p>
       </article>
-      <div class="about__doodles" aria-hidden="true">
-        <figure class="pinned">
-          <span class="tape tape--c"></span>
-          <img src="img/quaderno.jpg" alt="" width="900" height="1200" loading="lazy">
-        </figure>
-        <p class="hand hand--red about__scrawl" data-i18n="scrawl">dal mio quaderno</p>
-      </div>
     </div>
   </section>
 
@@ -136,6 +136,12 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- FOTO DEL QUADERNO, INGRANDITA -->
+<div class="lb" id="lb" aria-hidden="true" role="dialog" aria-modal="true">
+  <button class="room__close hand" type="button" id="lbClose" data-i18n="close">chiudi ✕</button>
+  <figure class="lb__fig"><span class="tape tape--c" aria-hidden="true"></span><img id="lbImg" alt=""><figcaption class="hand" id="lbCap"></figcaption></figure>
 </div>
 
 <script src="config.js"></script>

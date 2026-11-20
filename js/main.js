@@ -7,12 +7,11 @@
   /* ---------------- testi ---------------- */
   const T = {
     it: {
-      nav_works: 'opere', nav_bio: 'chi sono', nav_contact: 'scrivimi',
-      kicker: '— dipinti di sunshyray', go: 'entra nella mostra ↓',
-      works_title: 'La mostra', bio_title: 'Chi sono', contact_title: 'Scrivimi',
+      nav_works: 'opere', nav_nb: 'quaderno', nav_bio: 'chi sono', nav_contact: 'scrivimi',
+      go: 'guarda le opere ↓', nb_title: 'Il mio quaderno', nb_note: 'pagine, schizzi, appunti',
+      works_title: 'Opere', bio_title: 'Chi sono', contact_title: 'Scrivimi',
       f_all: 'tutte', f_avail: 'disponibili', f_sold: 'vendute',
       empty: 'nuovi quadri in arrivo…',
-      scrawl: 'dal mio quaderno',
       pc_msg: 'Per acquistare un quadro o per commissioni, scrivimi.',
       foot: 'tutte le opere sono dipinte a mano', top: 'torna su ↑', close: 'chiudi ✕',
       prev: '← quello prima', next: 'quello dopo →',
@@ -26,12 +25,11 @@
       manifesto: 'Dipingo ~~quello che vedo~~ quello che *nessuno* vuole guardare.'
     },
     en: {
-      nav_works: 'works', nav_bio: 'about', nav_contact: 'write me',
-      kicker: '— paintings by sunshyray', go: 'step into the show ↓',
-      works_title: 'The show', bio_title: 'About me', contact_title: 'Write me',
+      nav_works: 'works', nav_nb: 'notebook', nav_bio: 'about', nav_contact: 'write me',
+      go: 'see the works ↓', nb_title: 'My notebook', nb_note: 'pages, sketches, notes',
+      works_title: 'Works', bio_title: 'About me', contact_title: 'Write me',
       f_all: 'all', f_avail: 'available', f_sold: 'sold',
       empty: 'new paintings coming soon…',
-      scrawl: 'from my notebook',
       pc_msg: 'To buy a painting or for commissions, write to me.',
       foot: 'every work is painted by hand', top: 'back to top ↑', close: 'close ✕',
       prev: '← previous one', next: 'next one →',
@@ -156,13 +154,14 @@
   }
 
   /* ---------------- dati ---------------- */
-  let works = [], site = {}, filter = 'all';
+  let works = [], site = {}, notes = [], filter = 'all';
   const L = (w, k) => (lang === 'en' && w[k + '_en']) ? w[k + '_en'] : (w[k] || '');
   async function load() {
     const v = '?v=' + Date.now();
     try {
-      const [a, b] = await Promise.all([fetch('data/opere.json' + v).then(r => r.json()), fetch('data/sito.json' + v).then(r => r.json())]);
-      works = Array.isArray(a) ? a : []; site = b || {};
+      const get = f => fetch(f + v).then(r => r.ok ? r.json() : null).catch(() => null);
+      const [a, b, c] = await Promise.all([get('data/opere.json'), get('data/sito.json'), get('data/quaderno.json')]);
+      works = Array.isArray(a) ? a : []; site = b || {}; notes = Array.isArray(c) ? c : [];
     } catch (e) { console.warn('dati non caricati', e); }
   }
 
@@ -176,17 +175,61 @@
       ${!sold && big ? '' : !sold ? `<span class="avail">● ${t('avail')}</span>` : ''}`;
   }
 
+  /* la tela sul muro è grande in proporzione alle sue misure reali (larghezza in cm) */
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  function sizeOf(w) {
+    const m = String(w.dimensioni || '').replace(/,/g, '.').match(/(\d+(?:\.\d+)?)\s*[x×X*]\s*(\d+(?:\.\d+)?)/);
+    let cm;
+    if (m) cm = parseFloat(m[1]);
+    else { const r = (w.w || 4) / (w.h || 5); cm = r > 1.15 ? 80 : r < .85 ? 45 : 55; }
+    return { d: clamp(cm * .5, 16, 46).toFixed(1), m: clamp(cm * 1.15, 55, 92).toFixed(1) };
+  }
+
+  /* ---------------- il mio quaderno ---------------- */
+  const NR = [-2.5, 1.8, -1.2, 2.6, -1.8, 1.1];
+  function renderNotebook() {
+    const box = $('#nb'); box.innerHTML = '';
+    $('#quaderno').hidden = !notes.length;
+    $$('a[href="#quaderno"]').forEach(a => a.hidden = !notes.length);
+    notes.forEach((n, i) => {
+      const f = document.createElement('figure');
+      f.className = 'snap rv'; f.style.setProperty('--r', NR[i % NR.length] + 'deg');
+      const cap = L(n, 'nota');
+      f.innerHTML = `<span class="tape tape--c" aria-hidden="true"></span>
+        <button type="button" aria-label="${esc(cap || t('nb_title'))}"><img src="${esc(n.thumb || n.img)}" alt="${esc(cap)}" loading="lazy" width="${n.w || ''}" height="${n.h || ''}"></button>
+        ${cap ? `<figcaption class="hand">${esc(cap)}</figcaption>` : ''}`;
+      f.querySelector('button').addEventListener('click', () => openLb(i));
+      box.appendChild(f); io.observe(f);
+    });
+  }
+  const lb = $('#lb');
+  function openLb(i) {
+    const n = notes[i];
+    $('#lbImg').src = n.img; $('#lbImg').alt = L(n, 'nota');
+    $('#lbCap').textContent = L(n, 'nota');
+    lb.classList.add('open'); lb.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('room-open');
+    $('#lbClose').focus({ preventScroll: true });
+  }
+  function closeLb() {
+    if (!lb.classList.contains('open')) return;
+    lb.classList.remove('open'); lb.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('room-open');
+  }
+  $('#lbClose').addEventListener('click', closeLb);
+  lb.addEventListener('click', e => { if (e.target === lb) closeLb(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); });
+
   const TILT = [-.7, .5, -.35, .8, -.55, .3, .6, -.8];
   const LT = [1.2, -1, .7, -1.4, .9, -.6];
   const OFF = [0, 70, 20, 0, 90, 30];
   function renderWall() {
     const wall = $('#wall'); wall.innerHTML = '';
     works.forEach((w, i) => {
-      const ratio = (w.w || 4) / (w.h || 5);
-      const kind = ratio > 1.15 ? 'wide' : ratio < .85 ? 'tall' : 'sq';
+      const sz = sizeOf(w);
       const a = document.createElement('article');
-      a.className = `piece piece--${kind}`; a.dataset.i = i;
-      a.style.cssText = `--off:${OFF[i % OFF.length]}px;--d:${(i % 3) * .18}s;--lt:${LT[i % LT.length]}deg;--sd:${11 + (i % 4) * 1.5}s;--sdl:-${(i * 1.7).toFixed(1)}s`;
+      a.className = 'piece'; a.dataset.i = i;
+      a.style.cssText = `--w:${sz.d}%;--wm:${sz.m}%;--off:${OFF[i % OFF.length]}px;--d:${(i % 3) * .18}s;--lt:${LT[i % LT.length]}deg;--sd:${11 + (i % 4) * 1.5}s;--sdl:-${(i * 1.7).toFixed(1)}s`;
       a.innerHTML = `
         <div class="piece__hang" style="--tilt:${TILT[i % TILT.length]}deg">
           <button type="button" class="piece__canvas" aria-label="${esc(L(w, 'titolo'))}">
@@ -311,7 +354,7 @@
     document.documentElement.lang = lang;
     $$('[data-i18n]').forEach(el => { el.innerHTML = t(el.dataset.i18n); });
     renderManifesto((lang === 'en' ? site.manifesto_en : site.manifesto_it) || t('manifesto'));
-    renderBio(); renderContact(); renderWall();
+    renderBio(); renderContact(); renderWall(); renderNotebook();
     if (room.classList.contains('open')) fillRoom(cur);
   }
   $('.lang').addEventListener('click', () => {

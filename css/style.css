@@ -103,10 +103,8 @@ html[lang=it] .lang [data-l=it],html[lang=en] .lang [data-l=en]{opacity:1;text-d
 .wall{display:flex;flex-wrap:wrap;justify-content:space-around;align-items:flex-start;gap:clamp(60px,8vw,110px) clamp(30px,5vw,70px)}
 .piece{position:relative;width:var(--w,30%);margin-top:var(--off,0px)}
 .piece.is-hidden{display:none}
-.piece--wide{--w:42%}.piece--tall{--w:25%}.piece--sq{--w:31%}
 .piece__hang{transform-origin:50% -20px;opacity:0;transform:translateY(-40px) rotate(-5deg)}
 .piece.in .piece__hang{animation:hang 2.2s cubic-bezier(.3,.6,.4,1) both;animation-delay:var(--d,0s);opacity:1}
-.piece.in .piece__hang:hover{animation:nudge 1.3s ease both}
 .piece__canvas{display:block;width:100%;position:relative}
 .label{position:relative;display:inline-block;margin:22px 0 0 10%;max-width:90%;background:var(--card) url(../img/carta.jpg) 0 0/384px;padding:14px 18px 15px;font-family:var(--type);font-size:15.5px;line-height:1.5;color:#3a362f;box-shadow:0 1px 0 rgba(0,0,0,.05),0 6px 14px -8px rgba(40,30,20,.35);transform:rotate(var(--lt,0deg))}
 .label b{display:block;font-weight:400;font-family:var(--serif);font-style:italic;font-size:25px;line-height:1.15;color:var(--ink);margin:2px 0 5px}
@@ -119,7 +117,7 @@ html[lang=it] .lang [data-l=it],html[lang=en] .lang [data-l=en]{opacity:1;text-d
 
 /* ---------- chi sono ---------- */
 .about{padding:clamp(80px,11vw,160px) var(--pad)}
-.about__grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:clamp(30px,6vw,90px);align-items:center;margin-top:clamp(40px,6vw,80px)}
+.about__grid{display:grid;grid-template-columns:minmax(0,860px);margin-top:clamp(40px,6vw,80px)}
 .letter{position:relative;background:var(--card);padding:clamp(28px,4.5vw,60px) clamp(24px,4.5vw,64px) clamp(26px,3.5vw,44px);box-shadow:0 2px 0 rgba(0,0,0,.04),0 24px 40px -22px rgba(40,30,20,.45);transform:rotate(-.8deg);
   background-image:repeating-linear-gradient(transparent 0 41px,rgba(70,100,140,.13) 41px 42px),url(../img/carta.jpg);background-position:0 22px,0 0;background-size:auto,384px}
 .letter__body{font-family:var(--hand);font-size:clamp(35px,3.3vw,43px);line-height:42px;color:var(--ink)}
@@ -192,7 +190,7 @@ html[lang=it] .lang [data-l=it],html[lang=en] .lang [data-l=en]{opacity:1;text-d
 @media (max-width:900px){
   .intro{grid-template-columns:1fr;min-height:0}
   .hung{width:min(78%,380px)}
-  .piece--wide{--w:100%}.piece--tall{--w:44%}.piece--sq{--w:46%}
+  .piece{width:min(100%,calc(var(--wm,70%) * .72))}
   .about__grid{grid-template-columns:1fr}
   .room__inner{grid-template-columns:1fr;align-items:start}
   .room__wall{min-height:0}
@@ -201,7 +199,7 @@ html[lang=it] .lang [data-l=it],html[lang=en] .lang [data-l=en]{opacity:1;text-d
   body{font-size:19px}
   .top__nav a{display:none}
   .wall{gap:70px}
-  .piece{--w:86%!important;margin-top:0!important}
+  .piece{width:var(--wm,86%)!important;margin-top:0!important}
   .piece:nth-child(odd){margin-right:auto}
   .piece:nth-child(even){margin-left:auto}
   .filters{margin-left:0}
@@ -256,3 +254,34 @@ section[id]{scroll-margin-top:100px}
     repeating-linear-gradient(0deg,rgba(0,0,0,.028) 0 1px,transparent 1px 2px),
     repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 1px,transparent 1px 2px);
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.12),inset 1px 1px 0 rgba(255,255,255,.12)}
+
+/* ---------- il mio quaderno: pagina a quadretti ---------- */
+.notebook{padding:clamp(70px,10vw,140px) var(--pad);border-bottom:1px solid var(--line);
+  background-color:var(--card);
+  background-image:linear-gradient(rgba(70,100,140,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(70,100,140,.16) 1px,transparent 1px),url(../img/carta.jpg);
+  background-size:26px 26px,26px 26px,384px;background-position:-1px -1px,-1px -1px,0 0}
+.notebook[hidden]{display:none}
+.notebook .show__note{display:inline-block;margin-left:18px}
+.nb{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:clamp(40px,6vw,80px) clamp(30px,5vw,70px);margin-top:clamp(40px,6vw,80px)}
+.snap{position:relative;width:clamp(220px,27vw,340px);background:var(--card) url(../img/carta.jpg) 0 0/384px;padding:12px 12px 14px;
+  box-shadow:0 2px 0 rgba(0,0,0,.04),0 22px 36px -20px rgba(40,30,20,.5);transform:rotate(var(--r,0deg));transition:transform .5s ease,box-shadow .5s ease}
+.snap.rv{opacity:0;transform:translateY(18px) rotate(var(--r,0deg))}
+.snap.rv.in{opacity:1;transform:rotate(var(--r,0deg))}
+.snap:hover{transform:rotate(0deg) scale(1.03);box-shadow:0 2px 0 rgba(0,0,0,.04),0 30px 44px -20px rgba(40,30,20,.55)}
+.snap button{display:block;width:100%}
+.snap img{width:100%;height:auto;filter:brightness(1.12) contrast(1.08)}
+.snap figcaption{margin-top:10px;color:var(--ink);text-align:center}
+.tape--c{left:50%;margin-left:-55px;top:-16px;transform:rotate(-4deg);z-index:1}
+
+/* foto del quaderno ingrandita */
+.lb{position:fixed;inset:0;z-index:72;display:grid;place-items:center;padding:70px var(--pad) 30px;background:rgba(242,237,227,.94) url(../img/muro.jpg) 0 0/768px;
+  visibility:hidden;opacity:0;transition:opacity .4s ease,visibility 0s .4s;overflow-y:auto}
+.lb.open{visibility:visible;opacity:1;transition:opacity .4s ease}
+.lb__fig{position:relative;background:var(--card) url(../img/carta.jpg) 0 0/384px;padding:14px 14px 16px;max-width:min(92vw,900px);
+  box-shadow:0 30px 60px -24px rgba(40,30,20,.55);transform:rotate(-1deg) scale(.96);transition:transform .5s ease}
+.lb.open .lb__fig{transform:rotate(-1deg) scale(1)}
+.lb__fig img{max-height:calc(100svh - 190px);width:auto;max-width:100%;margin:0 auto;filter:brightness(1.12) contrast(1.08)}
+.lb__fig figcaption{text-align:center;margin-top:10px;color:var(--ink)}
+.lb__fig figcaption:empty{display:none}
+@media (max-width:620px){.snap{width:min(82%,340px)}}
+@media (prefers-reduced-motion:reduce){.snap.rv{opacity:1;transform:rotate(var(--r,0deg))}}

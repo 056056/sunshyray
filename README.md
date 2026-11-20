@@ -6,7 +6,9 @@ Sito portfolio e vetrina dei dipinti di **sunshyray**. È un sito statico ospita
 - `admin.html`: lo **studio**, la pagina privata da cui si caricano le opere
 - `data/opere.json`: l'elenco delle opere (lo modifica lo studio)
 - `data/sito.json`: bio e contatti (lo modifica lo studio)
+- `data/quaderno.json`: le pagine del quaderno (lo modifica lo studio)
 - `opere/`: le foto dei quadri
+- `quaderno/`: le foto del quaderno
 
 ## Configurazione (una volta sola)
 
@@ -23,8 +25,9 @@ Sito portfolio e vetrina dei dipinti di **sunshyray**. È un sito statico ospita
 
 ## Come si usa lo studio
 
-- **＋ Nuova**: trascini o scegli la foto, scrivi titolo, descrizione, prezzo e gli altri dati, poi premi **Pubblica**. La foto viene ridimensionata in automatico.
-- **Le mie opere**: qui puoi modificare un'opera, segnarla come venduta o disponibile, cambiare l'ordine con ↑ ↓ o eliminarla.
+- **＋ Opera**: trascini o scegli la foto, poi trascini i **4 pallini sugli angoli del quadro**: la foto viene raddrizzata e ritagliata, così si appoggia bene sulla tela. Scrivi titolo, descrizione, **dimensioni** (larghezza × altezza: servono anche a mostrare la tela più grande o più piccola, come dal vero), prezzo, poi premi **Pubblica**.
+- **Quaderno**: foto di pagine, schizzi e appunti (senza ritaglio), con una nota facoltativa. Se è vuoto, la sezione sul sito resta nascosta.
+- **Opere**: qui puoi modificare un'opera, segnarla come venduta o disponibile, cambiare l'ordine con ↑ ↓ o eliminarla.
 - **Bio**: la frase d'apertura battuta a macchina (`~~parole~~` = cancellate a penna, `*parola*` = cerchiata in rosso), la bio (IT/EN), Instagram, email e WhatsApp. I link "scrivimi" sul sito usano questi contatti.
 
 Dopo ogni modifica il sito si aggiorna in 1–2 minuti.
