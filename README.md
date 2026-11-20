@@ -25,7 +25,7 @@ Sito portfolio e vetrina dei dipinti di **sunshyray**. È un sito statico ospita
 
 - **＋ Nuova**: trascini o scegli la foto, scrivi titolo, descrizione, prezzo e gli altri dati, poi premi **Pubblica**. La foto viene ridimensionata in automatico.
 - **Le mie opere**: qui puoi modificare un'opera, segnarla come venduta o disponibile, cambiare l'ordine con ↑ ↓ o eliminarla.
-- **Bio**: testo della bio (IT/EN), Instagram, email e WhatsApp. I bottoni "Richiedi" sul sito usano questi contatti.
+- **Bio**: la frase d'apertura battuta a macchina (`~~parole~~` = cancellate a penna, `*parola*` = cerchiata in rosso), la bio (IT/EN), Instagram, email e WhatsApp. I link "scrivimi" sul sito usano questi contatti.
 
 Dopo ogni modifica il sito si aggiorna in 1–2 minuti.
 

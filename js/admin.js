@@ -156,7 +156,7 @@
 
   /* ---------- form ---------- */
   let editing = null; // id of work being edited
-  const F = { titolo: '#f-titolo', descrizione: '#f-desc', anno: '#f-anno', prezzo: '#f-prezzo', tecnica: '#f-tecnica', dimensioni: '#f-dim', titolo_en: '#f-titolo-en', descrizione_en: '#f-desc-en', tecnica_en: '#f-tecnica-en' };
+  const F = { titolo: '#f-titolo', descrizione: '#f-desc', anno: '#f-anno', prezzo: '#f-prezzo', tecnica: '#f-tecnica', dimensioni: '#f-dim', tema: '#f-tema', tema_en: '#f-tema-en', titolo_en: '#f-titolo-en', descrizione_en: '#f-desc-en', tecnica_en: '#f-tecnica-en' };
   function readForm() {
     const o = {}; for (const k in F) o[k] = $(F[k]).value.trim();
     o.stato = document.querySelector('input[name=stato]:checked').value;
@@ -169,7 +169,7 @@
     $('#dropEmpty').hidden = false; $('#dropFull').hidden = true; fileIn.value = '';
     $('#formTitle').textContent = 'Nuova opera';
     $('#formLead').textContent = 'Trascina qui la foto del quadro (o toccala per sceglierla), scrivi due righe e premi Pubblica.';
-    $('#publish').textContent = 'Pubblica ✦'; $('#cancelEdit').hidden = true;
+    $('#publish').textContent = 'Pubblica'; $('#cancelEdit').hidden = true;
   }
   $('#cancelEdit').onclick = () => { resetForm(); tab('list'); };
 
@@ -199,7 +199,7 @@
         return [{ id, ...imgFields, ...data }, ...list];
       }, (editing ? 'Modifica: ' : 'Nuova opera: ') + data.titolo);
       if (oldImgs) for (const p of oldImgs) if (p) await deleteFile(p, 'Rimuovo vecchia foto').catch(() => {});
-      done(editing ? 'Modifiche salvate ✦' : 'Pubblicata ✦', 'Sarà visibile sul sito tra un paio di minuti.');
+      done(editing ? 'Modifiche salvate' : 'Pubblicata!', 'Sarà visibile sul sito tra un paio di minuti.');
       resetForm(); loadList();
     } catch (e) { fail(e); }
   };
@@ -240,14 +240,14 @@
       $('#preview').src = rawUrl(w.img); $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
       $('#formTitle').textContent = 'Modifica opera';
       $('#formLead').textContent = 'Cambia quello che vuoi. Se non tocchi la foto, resta quella di prima.';
-      $('#publish').textContent = 'Salva modifiche ✦'; $('#cancelEdit').hidden = false;
+      $('#publish').textContent = 'Salva modifiche'; $('#cancelEdit').hidden = false;
       tab('new'); return;
     }
     try {
       if (a === 'toggle') {
         busy('Aggiorno…');
         await updateWorks(l => l.map(x => x.id === w.id ? { ...x, stato: x.stato === 'venduta' ? 'disponibile' : 'venduta' } : x), 'Stato: ' + w.titolo);
-        done('Fatto ✦', 'Il sito si aggiorna tra un paio di minuti.');
+        done('Fatto', 'Il sito si aggiorna tra un paio di minuti.');
       } else if (a === 'up' || a === 'down') {
         busy('Sposto…');
         await updateWorks(l => { const i = l.findIndex(x => x.id === w.id), j = i + (a === 'up' ? -1 : 1); if (i > -1 && j >= 0 && j < l.length) [l[i], l[j]] = [l[j], l[i]]; return l; }, 'Ordine opere');
@@ -264,7 +264,7 @@
   });
 
   /* ---------- bio ---------- */
-  const B = { bio_it: '#b-it', bio_en: '#b-en', instagram: '#b-ig', email: '#b-mail', whatsapp: '#b-wa' };
+  const B = { manifesto_it: '#m-it', manifesto_en: '#m-en', bio_it: '#b-it', bio_en: '#b-en', instagram: '#b-ig', email: '#b-mail', whatsapp: '#b-wa' };
   async function loadBio() {
     try { const { data } = await getJSON('data/sito.json', {}); for (const k in B) $(B[k]).value = data[k] || ''; } catch (e) {}
   }
@@ -274,7 +274,7 @@
       const { data, sha } = await getJSON('data/sito.json', {});
       for (const k in B) data[k] = $(B[k]).value.trim().replace(k === 'instagram' ? /^@/ : /^$/, '');
       await putJSON('data/sito.json', data, 'Bio e contatti', sha);
-      done('Salvato ✦', 'Il sito si aggiorna tra un paio di minuti.');
+      done('Salvato', 'Il sito si aggiorna tra un paio di minuti.');
     } catch (e) { fail(e); }
   };
 

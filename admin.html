@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>sunshyray — studio</title>
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0c0a0a">
+<meta name="theme-color" content="#f2ede3">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Reenie+Beanie&family=Special+Elite&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#0c0a0a;--ink-2:#171313;--ink-3:#221c1c;--bone:#ece5d8;--dim:#a59d90;--red:#c3191f;--line:rgba(236,229,216,.14);--ok:#7bd48a;--serif:"Cormorant Garamond",Georgia,serif;--sans:"Manrope",system-ui,sans-serif;--ease:cubic-bezier(.16,1,.3,1)}
+:root{--ink:#f2ede3;--ink-2:#fbf9f4;--ink-3:#e8e1d3;--bone:#1d1b18;--dim:#6e675c;--red:#b0241c;--line:rgba(29,27,24,.18);--ok:#3f6b45;--serif:"EB Garamond",Georgia,serif;--sans:"Special Elite","Courier New",monospace;--hand:"Reenie Beanie",cursive;--ease:cubic-bezier(.16,1,.3,1)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--ink);color:var(--bone);font-family:var(--sans);font-size:16px;line-height:1.5;min-height:100svh;-webkit-font-smoothing:antialiased}
 button,input,textarea,select{font:inherit;color:inherit}
@@ -19,10 +19,10 @@ button{cursor:pointer;background:none;border:0}
 a{color:inherit}
 .wrap{max-width:760px;margin:0 auto;padding:24px 16px 80px}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:28px}
-.logo{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-style:italic;font-size:26px;text-decoration:none}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--hand);font-size:36px;line-height:1;text-decoration:none}
 .logo svg{width:34px}
 .small-btn{font-size:13px;color:var(--dim);text-decoration:underline;text-underline-offset:3px}
-h1{font-family:var(--serif);font-weight:300;font-style:italic;font-size:clamp(40px,9vw,64px);line-height:1;margin-bottom:10px}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(40px,9vw,64px);line-height:1;margin-bottom:10px}
 .lead{color:var(--dim);margin-bottom:28px}
 .tabs{display:flex;gap:6px;background:var(--ink-2);padding:6px;border-radius:99px;margin-bottom:28px;position:sticky;top:10px;z-index:5;border:1px solid var(--line)}
 .tabs button{flex:1;padding:12px 8px;border-radius:99px;font-size:14px;font-weight:500;color:var(--dim);transition:background .3s,color .3s}
@@ -31,12 +31,12 @@ h1{font-family:var(--serif);font-weight:300;font-style:italic;font-size:clamp(40
 .panel.on{display:block}
 @keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
-.drop{position:relative;display:grid;place-items:center;text-align:center;min-height:260px;border:1.5px dashed rgba(236,229,216,.35);border-radius:22px;padding:28px;cursor:pointer;transition:border-color .3s,background .3s;overflow:hidden;background:var(--ink-2)}
-.drop:hover,.drop.over{border-color:var(--red);background:#1d1414}
-.drop .big{font-family:var(--serif);font-style:italic;font-size:30px;line-height:1.1;margin:10px 0 6px}
+.drop{position:relative;display:grid;place-items:center;text-align:center;min-height:260px;border:1.5px dashed rgba(29,27,24,.35);border-radius:22px;padding:28px;cursor:pointer;transition:border-color .3s,background .3s;overflow:hidden;background:var(--ink-2)}
+.drop:hover,.drop.over{border-color:var(--red);background:#fff}
+.drop .big{font-family:var(--hand);font-size:40px;line-height:1.1;margin:10px 0 6px}
 .drop .hint{color:var(--dim);font-size:14px}
 .drop svg.sp{width:56px;color:var(--red);animation:spin 10s linear infinite}
-.drop img{max-height:420px;width:auto;max-width:100%;border-radius:8px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.drop img{max-height:420px;width:auto;max-width:100%;box-shadow:2px 3px 0 #cbc1ae,8px 20px 34px -12px rgba(40,30,20,.45)}
 .drop .change{margin-top:12px;font-size:13px;color:var(--dim)}
 .drop input{display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -44,7 +44,7 @@ h1{font-family:var(--serif);font-weight:300;font-style:italic;font-size:clamp(40
 .field{margin-top:18px}
 .field label{display:block;font-size:13px;font-weight:500;letter-spacing:.04em;margin-bottom:7px;color:var(--bone)}
 .field label small{color:var(--dim);font-weight:400}
-.field input,.field textarea{width:100%;background:var(--ink-2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:16px;outline:none;transition:border-color .3s}
+.field input,.field textarea{font-family:var(--serif);font-size:18px!important;width:100%;background:var(--ink-2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:16px;outline:none;transition:border-color .3s}
 .field textarea{min-height:120px;resize:vertical;line-height:1.5}
 .field input:focus,.field textarea:focus{border-color:var(--bone)}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -59,7 +59,7 @@ details{margin-top:22px;border:1px solid var(--line);border-radius:14px;padding:
 summary{cursor:pointer;padding:12px 0 0;font-size:14px;color:var(--dim)}
 details[open] summary{margin-bottom:4px}
 
-.go{margin-top:28px;width:100%;padding:18px;border-radius:99px;background:var(--red);color:var(--bone);font-size:17px;font-weight:600;letter-spacing:.03em;transition:transform .2s,opacity .3s}
+.go{margin-top:28px;width:100%;padding:18px;border-radius:99px;background:var(--red);color:#fbf9f4;font-size:17px;font-weight:600;letter-spacing:.03em;transition:transform .2s,opacity .3s}
 .go:active{transform:scale(.98)}
 .go:disabled{opacity:.4;cursor:not-allowed}
 .ghost{margin-top:10px;width:100%;padding:14px;border-radius:99px;border:1px solid var(--line);color:var(--dim)}
@@ -72,7 +72,7 @@ details[open] summary{margin-bottom:4px}
 .item .acts{display:flex;flex-wrap:wrap;gap:6px}
 .item .acts button{font-size:13px;padding:7px 12px;border-radius:99px;border:1px solid var(--line)}
 .item .acts button:hover{border-color:var(--bone)}
-.item .acts .del{color:#ff8a8a}
+.item .acts .del{color:var(--red)}
 .pill-s{display:inline-flex;align-items:center;gap:6px;font-size:12px}
 .pill-s::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok)}
 .pill-s.sold::before{background:var(--red)}
@@ -80,18 +80,18 @@ details[open] summary{margin-bottom:4px}
 .note b{color:var(--bone)}
 .note ol{padding-left:20px;margin-top:6px}
 .note li{margin:4px 0}
-.err{color:#ff8a8a;font-size:14px;margin-top:10px;min-height:1em}
+.err{color:var(--red);font-size:14px;margin-top:10px;min-height:1em}
 
 /* overlay */
-.ov{position:fixed;inset:0;z-index:50;background:rgba(12,10,10,.92);backdrop-filter:blur(6px);display:none;place-items:center;text-align:center;padding:24px}
+.ov{position:fixed;inset:0;z-index:50;background:rgba(242,237,227,.94);backdrop-filter:blur(6px);display:none;place-items:center;text-align:center;padding:24px}
 .ov.on{display:grid;animation:fade .4s var(--ease)}
 .ov svg{width:90px;color:var(--red);animation:spin 2.4s linear infinite}
 .ov.done svg{animation:none;color:var(--ok)}
-.ov p{font-family:var(--serif);font-style:italic;font-size:30px;margin-top:18px}
+.ov p{font-family:var(--hand);font-size:44px;line-height:1;margin-top:18px}
 .ov small{display:block;color:var(--dim);margin-top:8px;font-size:14px;max-width:340px;margin-inline:auto}
 .ov button{margin-top:24px;padding:14px 30px;border-radius:99px;background:var(--bone);color:var(--ink);font-weight:600;display:none}
 .ov.done button,.ov.fail button{display:inline-block}
-.ov.fail svg{animation:none;color:#ff8a8a}
+.ov.fail svg{animation:none;color:var(--red)}
 </style>
 </head>
 <body>
@@ -109,7 +109,7 @@ details[open] summary{margin-bottom:4px}
 
   <!-- LOGIN -->
   <section id="login" hidden>
-    <h1>Ciao ✦</h1>
+    <h1>Ciao</h1>
     <p class="lead">Inserisci la chiave di accesso. Lo fai solo la prima volta: poi il telefono o il computer se la ricordano.</p>
     <div class="field"><label for="tok">Chiave di accesso</label><input id="tok" type="password" autocomplete="off" placeholder="github_pat_..."></div>
     <div class="field" id="repoField" hidden><label for="repo">Repository <small>(utente/nome-repo)</small></label><input id="repo" placeholder="utente/sunshyray"></div>
@@ -140,7 +140,8 @@ details[open] summary{margin-bottom:4px}
       </label>
 
       <div class="field"><label for="f-titolo">Titolo *</label><input id="f-titolo" placeholder="es. Vortice rosso"></div>
-      <div class="field"><label for="f-desc">Descrizione</label><textarea id="f-desc" placeholder="Cosa racconta questo quadro?"></textarea></div>
+      <div class="field"><label for="f-desc">Descrizione</label><textarea id="f-desc" placeholder="Cosa racconta questo quadro? Perché l'hai dipinto?"></textarea></div>
+      <div class="field"><label for="f-tema">Tema <small>(di cosa parla, in poche parole, es. "indifferenza")</small></label><input id="f-tema"></div>
       <div class="row">
         <div class="field"><label for="f-anno">Anno</label><input id="f-anno" inputmode="numeric"></div>
         <div class="field"><label for="f-prezzo">Prezzo <small>(vuoto = su richiesta)</small></label><input id="f-prezzo" placeholder="es. 350 €"></div>
@@ -160,8 +161,9 @@ details[open] summary{margin-bottom:4px}
         <div class="field"><label for="f-titolo-en">Title</label><input id="f-titolo-en"></div>
         <div class="field"><label for="f-desc-en">Description</label><textarea id="f-desc-en"></textarea></div>
         <div class="field"><label for="f-tecnica-en">Technique</label><input id="f-tecnica-en" placeholder="e.g. Acrylic on canvas"></div>
+        <div class="field"><label for="f-tema-en">Theme</label><input id="f-tema-en" placeholder="e.g. indifference"></div>
       </details>
-      <button class="go" id="publish">Pubblica ✦</button>
+      <button class="go" id="publish">Pubblica</button>
       <button class="ghost" id="cancelEdit" hidden>Annulla modifiche</button>
     </div>
 
@@ -176,12 +178,15 @@ details[open] summary{margin-bottom:4px}
     <div class="panel" id="p-bio">
       <h1>Bio e contatti</h1>
       <p class="lead">Questi testi compaiono nella pagina principale.</p>
+      <div class="field"><label for="m-it">Frase d'apertura <small>(quella battuta a macchina)</small></label><textarea id="m-it" style="min-height:90px"></textarea></div>
+      <p class="note">Trucchetto: scrivi <b>~~parole~~</b> per farle apparire cancellate a penna, e <b>*parola*</b> per cerchiarla in rosso.</p>
+      <div class="field"><label for="m-en">Frase d'apertura in inglese <small>(facoltativa)</small></label><textarea id="m-en" style="min-height:90px"></textarea></div>
       <div class="field"><label for="b-it">Bio (italiano)</label><textarea id="b-it" style="min-height:170px"></textarea></div>
       <div class="field"><label for="b-en">Bio (inglese) <small>(facoltativa)</small></label><textarea id="b-en" style="min-height:170px"></textarea></div>
       <div class="field"><label for="b-ig">Instagram <small>(solo il nome, senza @)</small></label><input id="b-ig" placeholder="sunshyray"></div>
       <div class="field"><label for="b-mail">Email</label><input id="b-mail" type="email" placeholder="nome@email.com"></div>
       <div class="field"><label for="b-wa">WhatsApp <small>(con prefisso, es. 393331234567, facoltativo)</small></label><input id="b-wa" inputmode="tel"></div>
-      <button class="go" id="saveBio">Salva ✦</button>
+      <button class="go" id="saveBio">Salva</button>
     </div>
   </section>
 </div>

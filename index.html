@@ -4,144 +4,132 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>sunshyray — dipinti</title>
-<meta name="description" content="sunshyray — dipinti originali. Occhi, spirali, rosso e bianco.">
-<meta name="theme-color" content="#0c0a0a">
+<meta name="description" content="sunshyray — dipinti originali. Una piccola galleria di quadri che guardano indietro.">
+<meta name="theme-color" content="#f2ede3">
 <meta property="og:title" content="sunshyray">
-<meta property="og:description" content="Dipinti originali — occhi, spirali, rosso e bianco.">
+<meta property="og:description" content="Dipinti originali. Una piccola galleria di quadri che guardano indietro.">
 <meta property="og:image" content="og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Reenie+Beanie&family=Special+Elite&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="is-loading">
+<body>
 
-<!-- preloader -->
-<div class="loader" aria-hidden="true">
-  <svg class="loader__spiral" viewBox="-100 -100 200 200"><path class="spiral-path" /></svg>
-  <div class="loader__count"><span>0</span></div>
-</div>
+<!-- filtro "tremolio" per i disegni a mano -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="boil"><feTurbulence id="boilT" type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="1"/><feDisplacementMap in="SourceGraphic" scale="2.6"/></filter>
+</svg>
 
-<!-- cursor -->
-<div class="cursor" aria-hidden="true"><div class="cursor__dot"></div><div class="cursor__ring"><span class="cursor__label"></span></div></div>
-
-<div class="grain" aria-hidden="true"></div>
-
-<header class="nav">
-  <a href="#top" class="nav__logo" aria-label="sunshyray">
-    <svg viewBox="-100 -100 200 200" class="mini-spiral"><path class="spiral-path" /></svg>
-    <span>sunshyray</span>
-  </a>
-  <nav class="nav__links">
-    <a href="#bio" data-i18n="nav_bio">Bio</a>
-    <a href="#opere" data-i18n="nav_works">Opere</a>
-    <a href="#contatti" data-i18n="nav_contact">Contatti</a>
+<header class="top">
+  <a href="#" class="sig" aria-label="sunshyray">sunshyray</a>
+  <nav class="top__nav">
+    <a href="#mostra" data-i18n="nav_works">opere</a>
+    <a href="#chi" data-i18n="nav_bio">chi sono</a>
+    <a href="#scrivimi" data-i18n="nav_contact">scrivimi</a>
+    <button class="lang" type="button" aria-label="Lingua / Language"><span data-l="it">it</span> / <span data-l="en">en</span></button>
   </nav>
-  <button class="lang" type="button" aria-label="Lingua / Language"><span data-l="it">IT</span><i>/</i><span data-l="en">EN</span></button>
 </header>
 
-<main id="top">
+<main>
 
-  <!-- HERO -->
-  <section class="hero">
-    <svg class="hero__spiral" viewBox="-100 -100 200 200" aria-hidden="true"><path class="spiral-path" /></svg>
-
-    <div class="eyes" aria-hidden="true">
-      <div class="eye eye--red"><svg viewBox="0 0 200 120">
-        <defs><clipPath id="almond-r"><path d="M4 60 Q100 -18 196 60 Q100 138 4 60Z"/></clipPath></defs>
-        <g class="eye__lid">
-          <path class="eye__white" d="M4 60 Q100 -18 196 60 Q100 138 4 60Z"/>
-          <g clip-path="url(#almond-r)"><g class="eye__iris">
-            <circle r="34" cx="100" cy="60" class="iris"/>
-            <circle r="34" cx="100" cy="60" class="iris-ring"/>
-            <circle r="14" cx="100" cy="60" class="pupil"/>
-            <circle r="5" cx="111" cy="49" class="glint"/>
-          </g></g>
-          <path class="eye__line" d="M4 60 Q100 -18 196 60 Q100 138 4 60Z"/>
-        </g>
-      </svg></div>
-      <div class="eye eye--white"><svg viewBox="0 0 200 120">
-        <defs><clipPath id="almond-w"><path d="M4 60 Q100 -18 196 60 Q100 138 4 60Z"/></clipPath></defs>
-        <g class="eye__lid">
-          <path class="eye__white" d="M4 60 Q100 -18 196 60 Q100 138 4 60Z"/>
-          <g clip-path="url(#almond-w)"><g class="eye__iris">
-            <circle r="34" cx="100" cy="60" class="iris"/>
-            <circle r="34" cx="100" cy="60" class="iris-ring"/>
-            <circle r="14" cx="100" cy="60" class="pupil"/>
-            <circle r="5" cx="111" cy="49" class="glint"/>
-          </g></g>
-          <path class="eye__line" d="M4 60 Q100 -18 196 60 Q100 138 4 60Z"/>
-        </g>
-      </svg></div>
-    </div>
-
-    <h1 class="hero__title" aria-label="sunshyray"><span class="split">sunshyray</span></h1>
-    <p class="hero__sub reveal-up" data-i18n="hero_sub">dipinti originali · occhi · spirali</p>
-    <a href="#opere" class="hero__scroll" aria-label="scroll"><span data-i18n="scroll">scorri</span><i></i></a>
-  </section>
-
-  <!-- MARQUEE -->
-  <div class="marquee" aria-hidden="true"><div class="marquee__track"></div></div>
-
-  <!-- BIO -->
-  <section class="bio" id="bio">
-    <div class="label reveal-up"><span>(01)</span> <span data-i18n="bio_label">Bio</span></div>
-    <div class="bio__grid">
-      <div class="bio__art" aria-hidden="true">
-        <svg class="bio__spiral" viewBox="-100 -100 200 200"><path class="spiral-path" /></svg>
-        <div class="bio__eye"></div>
+  <!-- INTRO / MANIFESTO -->
+  <section class="intro">
+    <div class="intro__text">
+      <p class="hand hand--red kicker" data-i18n="kicker">— dipinti di sunshyray</p>
+      <h1 class="manifesto" id="manifesto" aria-live="off"></h1>
+      <div class="doodle-eyes" aria-hidden="true">
+        <svg viewBox="0 0 120 70" class="deye deye--red"><g class="lid">
+          <path class="d" d="M6 38 C 30 6, 92 4, 114 37"/><path class="d" d="M8 39 C 34 64, 88 66, 112 35"/>
+          <g class="iris"><circle class="blot" cx="60" cy="37" r="14"/><circle class="d" cx="60" cy="37" r="14"/><circle class="pup" cx="60" cy="37" r="5.5"/></g>
+          <path class="d thin" d="M30 18 l-4 -9 M46 11 l-2 -10 M62 9 l0 -10 M78 11 l3 -9 M93 17 l5 -8"/>
+        </g></svg>
+        <svg viewBox="0 0 120 70" class="deye deye--white"><g class="lid">
+          <path class="d" d="M6 37 C 30 5, 90 6, 113 38"/><path class="d" d="M7 38 C 36 66, 86 63, 113 36"/>
+          <g class="iris"><circle class="d" cx="60" cy="37" r="14"/><circle class="pup" cx="60" cy="37" r="5.5"/></g>
+          <path class="d thin" d="M28 19 l-5 -8 M44 12 l-2 -10 M61 9 l1 -10 M77 11 l3 -9 M92 18 l6 -7"/>
+        </g></svg>
       </div>
-      <p class="bio__text words" id="bioText"></p>
+      <a href="#mostra" class="hand intro__go" data-i18n="go">entra nella mostra ↓</a>
     </div>
+
+    <figure class="hung" id="hung" hidden>
+      <svg class="hung__string" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M50 3 L4 39 M50 3 L96 39"/></svg>
+      <span class="hung__nail" aria-hidden="true"></span>
+      <button type="button" class="hung__canvas" id="hungBtn"><img id="hungImg" alt=""></button>
+      <figcaption class="hand" id="hungCap"></figcaption>
+    </figure>
   </section>
 
-  <!-- WORKS -->
-  <section class="works" id="opere">
-    <div class="works__head">
-      <div class="label reveal-up"><span>(02)</span> <span data-i18n="works_label">Opere</span></div>
-      <h2 class="big-title"><span class="split" data-i18n-split="works_title">Opere</span></h2>
-      <div class="filters reveal-up" role="tablist">
-        <button class="is-active" data-filter="all" data-i18n="f_all">Tutte</button>
-        <button data-filter="disponibile" data-i18n="f_avail">Disponibili</button>
-        <button data-filter="venduta" data-i18n="f_sold">Vendute</button>
+  <!-- MOSTRA -->
+  <section class="show" id="mostra">
+    <div class="show__head">
+      <h2 class="h2"><span data-i18n="works_title">La mostra</span><svg class="scribble-under" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M3 9 C 40 3, 70 12, 110 7 S 170 3, 197 8"/></svg></h2>
+      <p class="hand show__note" id="showNote"></p>
+      <div class="filters" role="tablist">
+        <button class="is-active" data-filter="all" data-i18n="f_all">tutte</button>
+        <button data-filter="disponibile" data-i18n="f_avail">disponibili</button>
+        <button data-filter="venduta" data-i18n="f_sold">vendute</button>
       </div>
     </div>
-    <div class="grid" id="grid"></div>
-    <p class="empty" id="empty" hidden data-i18n="empty">Nuove opere in arrivo.</p>
+    <div class="wall" id="wall"></div>
+    <p class="hand empty" id="empty" hidden data-i18n="empty">nuovi quadri in arrivo…</p>
   </section>
 
-  <!-- CONTACT -->
-  <section class="contact" id="contatti">
-    <svg class="contact__spiral" viewBox="-100 -100 200 200" aria-hidden="true"><path class="spiral-path" /></svg>
-    <div class="label reveal-up"><span>(03)</span> <span data-i18n="contact_label">Contatti</span></div>
-    <h2 class="contact__title"><span class="split" data-i18n-split="contact_title">Guardiamoci.</span></h2>
-    <p class="contact__text reveal-up" data-i18n="contact_text">Per opere, commissioni o semplicemente per parlare.</p>
-    <div class="contact__links reveal-up" id="contactLinks"></div>
+  <!-- CHI SONO -->
+  <section class="about" id="chi">
+    <h2 class="h2"><span data-i18n="bio_title">Chi sono</span><svg class="scribble-under" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M3 7 C 50 11, 90 2, 130 8 S 180 10, 197 5"/></svg></h2>
+    <div class="about__grid">
+      <article class="letter">
+        <span class="tape tape--l" aria-hidden="true"></span><span class="tape tape--r" aria-hidden="true"></span>
+        <div class="letter__body" id="bioText"></div>
+        <p class="letter__sign">sunshyray</p>
+      </article>
+      <div class="about__doodles" aria-hidden="true">
+        <svg class="spiral-doodle" viewBox="-100 -100 200 200"><path class="d" id="spiralA"/></svg>
+        <p class="hand hand--red about__scrawl" data-i18n="scrawl">occhio rosso: quello che sento.<br>occhio bianco: quello che vedo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCRIVIMI -->
+  <section class="contact" id="scrivimi">
+    <h2 class="h2"><span data-i18n="contact_title">Scrivimi</span><svg class="scribble-under" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M3 8 C 30 4, 80 11, 120 6 S 175 9, 197 6"/></svg></h2>
+    <div class="postcard">
+      <div class="postcard__msg">
+        <p class="hand" data-i18n="pc_msg">Se un quadro ti ha guardato, scrivimi. Rispondo sempre, anche per commissioni o solo per parlarne.</p>
+        <p class="hand postcard__sign">— s.</p>
+      </div>
+      <div class="postcard__addr">
+        <div class="stamp" aria-hidden="true">
+          <svg viewBox="0 0 120 70"><path class="d" d="M6 38 C 30 6, 92 4, 114 37"/><path class="d" d="M8 39 C 34 64, 88 66, 112 35"/><circle class="blot" cx="60" cy="37" r="14"/><circle class="d" cx="60" cy="37" r="14"/><circle class="pup" cx="60" cy="37" r="5.5"/></svg>
+        </div>
+        <ul class="postcard__lines" id="contactLinks"></ul>
+      </div>
+    </div>
   </section>
 </main>
 
-<footer class="footer">
-  <span>© <span id="year"></span> sunshyray</span>
-  <a href="#top" data-i18n="top">torna su ↑</a>
+<footer class="foot">
+  <span>© <span id="year"></span> sunshyray — <span data-i18n="foot">tutte le opere sono dipinte a mano</span></span>
+  <a href="#" data-i18n="top">torna su ↑</a>
 </footer>
 
-<!-- MODAL -->
-<div class="modal" id="modal" aria-hidden="true" role="dialog" aria-modal="true">
-  <button class="modal__close" type="button" aria-label="Chiudi"><span></span><span></span></button>
-  <div class="modal__inner">
-    <div class="modal__media"><img alt="" id="mImg"></div>
-    <div class="modal__info">
-      <div class="modal__num m-in" id="mNum"></div>
-      <h3 class="modal__title m-in" id="mTitle"></h3>
-      <dl class="modal__meta m-in" id="mMeta"></dl>
-      <p class="modal__desc m-in" id="mDesc"></p>
-      <div class="modal__price m-in" id="mPrice"></div>
-      <div class="modal__actions m-in" id="mActions"></div>
-      <div class="modal__nav m-in">
-        <button type="button" id="mPrev" data-i18n="prev">← precedente</button>
-        <button type="button" id="mNext" data-i18n="next">successiva →</button>
+<!-- SCHEDA OPERA -->
+<div class="room" id="room" aria-hidden="true" role="dialog" aria-modal="true">
+  <button class="room__close hand" type="button" data-i18n="close">chiudi ✕</button>
+  <div class="room__inner">
+    <div class="room__wall"><div class="room__canvas"><img alt="" id="rImg"></div></div>
+    <div class="room__info">
+      <div class="label label--big" id="rLabel"></div>
+      <div class="room__desc" id="rDesc"></div>
+      <div class="room__price" id="rPrice"></div>
+      <div class="room__ask" id="rAsk"></div>
+      <div class="room__nav hand">
+        <button type="button" id="rPrev" data-i18n="prev">← quello prima</button>
+        <button type="button" id="rNext" data-i18n="next">quello dopo →</button>
       </div>
     </div>
   </div>
