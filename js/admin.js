@@ -156,7 +156,7 @@
 
   /* ---------- form ---------- */
   let editing = null; // id of work being edited
-  const F = { titolo: '#f-titolo', descrizione: '#f-desc', anno: '#f-anno', prezzo: '#f-prezzo', tecnica: '#f-tecnica', dimensioni: '#f-dim', tema: '#f-tema', tema_en: '#f-tema-en', titolo_en: '#f-titolo-en', descrizione_en: '#f-desc-en', tecnica_en: '#f-tecnica-en' };
+  const F = { titolo: '#f-titolo', descrizione: '#f-desc', anno: '#f-anno', prezzo: '#f-prezzo', tecnica: '#f-tecnica', dimensioni: '#f-dim', titolo_en: '#f-titolo-en', descrizione_en: '#f-desc-en', tecnica_en: '#f-tecnica-en' };
   function readForm() {
     const o = {}; for (const k in F) o[k] = $(F[k]).value.trim();
     o.stato = document.querySelector('input[name=stato]:checked').value;

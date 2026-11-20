@@ -14,9 +14,7 @@
   "tecnica_en": "Acrylic on canvas",
   "dimensioni": "60 × 75 cm",
   "prezzo": "450 €",
-  "stato": "disponibile",
-  "tema": "il non detto",
-  "tema_en": "the unsaid"
+  "stato": "disponibile"
  },
  {
   "id": "esempio-2",
@@ -33,9 +31,7 @@
   "tecnica_en": "Oil on canvas",
   "dimensioni": "70 × 50 cm",
   "prezzo": "520 €",
-  "stato": "disponibile",
-  "tema": "sorveglianza",
-  "tema_en": "surveillance"
+  "stato": "disponibile"
  },
  {
   "id": "esempio-3",
@@ -52,9 +48,7 @@
   "tecnica_en": "Mixed media",
   "dimensioni": "55 × 70 cm",
   "prezzo": "",
-  "stato": "venduta",
-  "tema": "ascolto",
-  "tema_en": "being heard"
+  "stato": "venduta"
  },
  {
   "id": "esempio-4",
@@ -71,9 +65,7 @@
   "tecnica_en": "Acrylic on canvas",
   "dimensioni": "60 × 60 cm",
   "prezzo": "400 €",
-  "stato": "disponibile",
-  "tema": "corpo",
-  "tema_en": "the body"
+  "stato": "disponibile"
  },
  {
   "id": "esempio-5",
@@ -90,9 +82,7 @@
   "tecnica_en": "Oil on board",
   "dimensioni": "50 × 67 cm",
   "prezzo": "380 €",
-  "stato": "disponibile",
-  "tema": "indifferenza",
-  "tema_en": "indifference"
+  "stato": "disponibile"
  },
  {
   "id": "esempio-6",
@@ -109,8 +99,6 @@
   "tecnica_en": "Acrylic on canvas",
   "dimensioni": "75 × 55 cm",
   "prezzo": "",
-  "stato": "venduta",
-  "tema": "veglia",
-  "tema_en": "vigil"
+  "stato": "venduta"
  }
 ]

@@ -12,7 +12,7 @@
       works_title: 'La mostra', bio_title: 'Chi sono', contact_title: 'Scrivimi',
       f_all: 'tutte', f_avail: 'disponibili', f_sold: 'vendute',
       empty: 'nuovi quadri in arrivo…',
-      scrawl: 'occhio rosso: quello che sento.<br>occhio bianco: quello che vedo.',
+      scrawl: 'dal mio quaderno',
       pc_msg: 'Se un quadro ti ha guardato, scrivimi. Rispondo sempre, anche per commissioni o solo per parlarne.',
       foot: 'tutte le opere sono dipinte a mano', top: 'torna su ↑', close: 'chiudi ✕',
       prev: '← quello prima', next: 'quello dopo →',
@@ -31,7 +31,7 @@
       works_title: 'The show', bio_title: 'About me', contact_title: 'Write me',
       f_all: 'all', f_avail: 'available', f_sold: 'sold',
       empty: 'new paintings coming soon…',
-      scrawl: 'red eye: what I feel.<br>white eye: what I see.',
+      scrawl: 'from my notebook',
       pc_msg: 'If a painting looked back at you, write to me. I always reply — commissions, or just to talk about it.',
       foot: 'every work is painted by hand', top: 'back to top ↑', close: 'close ✕',
       prev: '← previous one', next: 'next one →',
@@ -56,17 +56,6 @@
   const setLen = p => p.style.setProperty('--len', Math.ceil(p.getTotalLength()) + 1);
   $$('.scribble-under path').forEach(setLen);
 
-  // spirale disegnata a mano: archimedea con un po' di tremolio
-  (function () {
-    let d = '', seed = 3;
-    const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280 - .5;
-    const max = 6.2 * Math.PI * 2, b = 92 / max;
-    for (let a = 0; a <= max; a += .16) {
-      const r = b * a + rnd() * 2.2;
-      d += (a ? 'L' : 'M') + (r * Math.cos(a)).toFixed(1) + ' ' + (r * Math.sin(a)).toFixed(1);
-    }
-    const p = $('#spiralA'); p.setAttribute('d', d); setLen(p);
-  })();
 
   // "tremolio" dei disegni, come un'animazione fatta a mano
   if (!reduced) { const tb = $('#boilT'); let s = 1; setInterval(() => tb.setAttribute('seed', (s = s % 4 + 1)), 150); }
@@ -179,12 +168,10 @@
   function labelHTML(w, big) {
     const sold = w.stato === 'venduta';
     const meta = [L(w, 'tecnica'), w.dimensioni].filter(Boolean).map(esc).join(', ');
-    const theme = L(w, 'tema');
     return `${sold ? '<span class="dot" title="venduto"></span>' : ''}
       <span class="artist">sunshyray</span>
       <b>${esc(L(w, 'titolo'))}${w.anno ? ', ' + esc(w.anno) : ''}</b>
       ${meta ? meta + '<br>' : ''}
-      ${theme ? `<span class="theme">${t('theme')}: ${esc(theme)}</span>` : ''}
       ${!sold && big ? '' : !sold ? `<span class="avail">● ${t('avail')}</span>` : ''}`;
   }
 
@@ -221,6 +208,7 @@
     $('#hung').hidden = !hw;
     if (hw) {
       $('#hungImg').src = hw.thumb || hw.img; $('#hungImg').alt = L(hw, 'titolo');
+      if (hw.w && hw.h) { $('#hungImg').width = hw.w; $('#hungImg').height = hw.h; $('#hungImg').style.height = 'auto'; }
       $('#hungCap').textContent = t('latest');
       $('#hungBtn').onclick = () => openRoom(hi);
     }
@@ -243,9 +231,12 @@
     bioBox.innerHTML = ''; const all = [];
     txt.split(/\n\s*\n/).forEach(par => {
       const p = document.createElement('p');
-      par.split(/\s+/).filter(Boolean).forEach(word => {
-        const s = document.createElement('span'); s.className = 'w'; s.textContent = word;
-        p.append(s, ' '); all.push(s);
+      par.trim().split('\n').forEach((line, li) => {
+        if (li) p.appendChild(document.createElement('br'));
+        line.split(/\s+/).filter(Boolean).forEach(word => {
+          const s = document.createElement('span'); s.className = 'w'; s.textContent = word;
+          p.append(s, ' '); all.push(s);
+        });
       });
       bioBox.appendChild(p);
     });
