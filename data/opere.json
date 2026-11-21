@@ -1,22 +1,5 @@
 [
  {
-  "id": "esempio-1",
-  "img": "opere/esempio-1.jpg",
-  "thumb": "opere/esempio-1-s.jpg",
-  "w": 1200,
-  "h": 1500,
-  "titolo": "Quello che giriamo intorno",
-  "titolo_en": "What we keep circling",
-  "descrizione": "Ci giriamo intorno da anni, sempre più vicini al centro e mai abbastanza da dirlo ad alta voce.",
-  "descrizione_en": "We've been circling it for years, closer to the centre each time, never close enough to say it out loud.",
-  "anno": "2025",
-  "tecnica": "Acrilico su tela",
-  "tecnica_en": "Acrylic on canvas",
-  "dimensioni": "60 × 75 cm",
-  "prezzo": "450 €",
-  "stato": "disponibile"
- },
- {
   "id": "esempio-2",
   "img": "opere/esempio-2.jpg",
   "thumb": "opere/esempio-2-s.jpg",
@@ -31,6 +14,23 @@
   "tecnica_en": "Oil on canvas",
   "dimensioni": "70 × 50 cm",
   "prezzo": "520 €",
+  "stato": "disponibile"
+ },
+ {
+  "id": "esempio-1",
+  "img": "opere/esempio-1.jpg",
+  "thumb": "opere/esempio-1-s.jpg",
+  "w": 1200,
+  "h": 1500,
+  "titolo": "Quello che giriamo intorno",
+  "titolo_en": "What we keep circling",
+  "descrizione": "Ci giriamo intorno da anni, sempre più vicini al centro e mai abbastanza da dirlo ad alta voce.",
+  "descrizione_en": "We've been circling it for years, closer to the centre each time, never close enough to say it out loud.",
+  "anno": "2025",
+  "tecnica": "Acrilico su tela",
+  "tecnica_en": "Acrylic on canvas",
+  "dimensioni": "60 × 75 cm",
+  "prezzo": "450 €",
   "stato": "disponibile"
  },
  {
