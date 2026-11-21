@@ -3,7 +3,8 @@
 Sito portfolio e vetrina dei dipinti di **sunshyray**. È un sito statico ospitato su GitHub Pages: niente server e niente costi.
 
 - `index.html`: il sito pubblico (bio, opere, contatti, in italiano e inglese)
-- `admin.html`: lo **studio**, la pagina privata da cui si caricano le opere
+- `studio/`: lo **studio**, il sito privato (protetto da password) da cui si caricano le opere
+- `data/chiave.json`: la chiave di GitHub chiusa con la password (illeggibile senza password)
 - `data/opere.json`: l'elenco delle opere (lo modifica lo studio)
 - `data/sito.json`: bio e contatti (lo modifica lo studio)
 - `data/quaderno.json`: le pagine del quaderno (lo modifica lo studio)
@@ -19,19 +20,16 @@ Sito portfolio e vetrina dei dipinti di **sunshyray**. È un sito statico ospita
    - *Repository access*: **Only select repositories**, poi scegli questo repo
    - *Permissions → Repository permissions → Contents*: **Read and write**
    - Premi *Generate token* e copia la chiave, che inizia con `github_pat_…`.
-3. Sul telefono di lei apri `https://<utente>.github.io/<repo>/admin.html` e incolla la chiave. Va fatto una volta sola. Poi aggiungi la pagina alla schermata Home ("Condividi → Aggiungi a Home"), così diventa come un'app.
+3. Apri `https://<utente>.github.io/<repo>/studio/`, incolla la chiave e **scegli una password**. Va fatto una volta sola.
+4. Da quel momento, da qualsiasi telefono, per entrare nello studio basta la password. Sul telefono di lei: apri lo studio, poi "Condividi → Aggiungi a Home", così diventa come un'app.
 
-## Come entra lei nello studio
+## Lo studio è solo per lei
 
-Lo studio è una pagina a parte: sul sito pubblico non c'è nessun link e nessun segno che esista, per nessuno.
-
-- **Dall'icona sulla schermata Home** (il modo più semplice, dopo il punto 3).
-- **Con un link già pronto**: nello studio, scheda *Bio* → *Entrare da un altro telefono* → *Crea il link per entrare*. Il link contiene la chiave: lo apre sul suo telefono ed è dentro, senza scrivere niente. Poi va cancellato il messaggio.
-- **Porta nascosta**: sul sito, 5 tocchi veloci sul logo "sunshyray" in alto aprono lo studio.
-
-Chi trovasse per caso `admin.html` vede solo la richiesta della chiave: senza chiave non può fare niente.
-
-> La chiave resta salvata solo nel browser di quel telefono o computer: non viene mai scritta nel repo. Non va condivisa con nessuno.
+- Il sito pubblico non ha nessun link allo studio e nessun segno che esista.
+- Chi apre `/studio/` vede solo l'anticamera, con la richiesta della password.
+- Porta nascosta: sul sito, 5 tocchi veloci sul logo "sunshyray" aprono lo studio.
+- La password si cambia dallo studio, nella scheda *Bio*.
+- Quando la chiave di GitHub scade: nell'anticamera tocca "Prima volta, o password dimenticata?", incolla una chiave nuova e scegli la password.
 
 ## Come si usa lo studio
 

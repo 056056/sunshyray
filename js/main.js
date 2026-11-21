@@ -368,7 +368,7 @@
   let taps = [];
   $('.sig').addEventListener('click', () => {
     const now = Date.now(); taps = taps.filter(x => now - x < 2500).concat(now);
-    if (taps.length >= 5) location.href = 'admin.html';
+    if (taps.length >= 5) location.href = 'studio/';
   });
   load().then(() => {
     applyLang(true);

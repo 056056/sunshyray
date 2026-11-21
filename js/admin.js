@@ -70,45 +70,111 @@
   function fail(e) {
     console.error(e);
     say('Qualcosa non ha funzionato',
-      e.status === 401 ? 'La chiave di accesso non è più valida. Premi "esci" e inseriscine una nuova.'
+      e.status === 401 ? 'La chiave di GitHub è scaduta. Premi "esci", poi "Prima volta, o password dimenticata?" e mettine una nuova.'
       : e.message === 'image' ? 'Questa foto non si riesce ad aprire. Prova con una foto JPG o PNG.'
       : 'Controlla la connessione e riprova. (' + (e.detail || e.message) + ')');
   }
   $('#ovBtn').onclick = idle;
 
-  /* ---------- accesso ---------- */
+  /* ---------- accesso con password ----------
+     La chiave di GitHub viene salvata nel repo dentro data/chiave.json,
+     chiusa con la password (PBKDF2 + AES-GCM): senza password è illeggibile. */
+  const KEYFILE = 'data/chiave.json';
+  const te = new TextEncoder();
+  const toB64 = u8 => btoa(String.fromCharCode(...u8));
+  const fromB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  async function derive(pw, salt, iter) {
+    const base = await crypto.subtle.importKey('raw', te.encode(pw), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  }
+  async function lock(token, pw) {
+    const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), iter = 600000;
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await derive(pw, salt, iter), te.encode(token)));
+    return { v: 1, iter, salt: toB64(salt), iv: toB64(iv), data: toB64(ct) };
+  }
+  async function unlock(box, pw) {
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(box.iv) }, await derive(pw, fromB64(box.salt), box.iter), fromB64(box.data));
+    return new TextDecoder().decode(pt);
+  }
+  async function fetchBox() {
+    try {
+      const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${KEYFILE}`, { cache: 'no-store', headers: { Accept: 'application/vnd.github.raw+json' } });
+      if (r.ok) return await r.json();
+      if (r.status === 404) return null;
+    } catch (e) {}
+    try { const r = await fetch('../' + KEYFILE + '?v=' + Date.now(), { cache: 'no-store' }); if (r.ok) return await r.json(); } catch (e) {}
+    return null;
+  }
+  async function saveBox(pw) {
+    const box = await lock(TOKEN, pw);
+    const { sha } = await getJSON(KEYFILE, null);
+    await putJSON(KEYFILE, box, 'Password dello studio', sha);
+    return box;
+  }
+  const pwProblem = (a, b) => a.length < 8 ? 'La password deve avere almeno 8 caratteri.' : a !== b ? 'Le due password non sono uguali.' : '';
+
   async function tryLogin() {
     const r = await api('');
     if (!r.permissions || !r.permissions.push) { const e = new Error('nopush'); e.status = 403; throw e; }
   }
+  let box = null;
+  function showSetup(on) { $('#setupBox').hidden = !on; $('#pwBox').hidden = on; $('#loginErr').textContent = $('#setupErr').textContent = ''; (on ? $('#tok') : $('#pw')).focus(); }
+  $('#toSetup').onclick = () => showSetup(true);
+  $('#toPw').onclick = () => showSetup(false);
   async function boot() {
-    // link "entra con un tocco": admin.html#chiave=...&repo=...
-    const hp = new URLSearchParams(location.hash.slice(1));
-    if (hp.get('chiave')) {
-      TOKEN = hp.get('chiave'); store.set('ss_token', TOKEN);
-      if (hp.get('repo')) { REPO = hp.get('repo'); store.set('ss_repo', REPO); }
-      history.replaceState(null, '', location.pathname);
-    }
     if (!REPO) $('#repoField').hidden = false;
-    if (!TOKEN || !REPO) { $('#login').hidden = false; return; }
-    try { busy('Apro lo studio…'); await tryLogin(); store.set('ss_repo', REPO); idle(); showApp(); }
-    catch (e) { idle(); $('#login').hidden = false; $('#loginErr').textContent = 'La chiave salvata non funziona più: inseriscine una nuova.'; }
-  }
-  $('#loginBtn').onclick = async () => {
-    TOKEN = $('#tok').value.trim();
-    if (!REPO) REPO = $('#repo').value.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, '');
-    $('#loginErr').textContent = '';
-    if (!TOKEN || !REPO) { $('#loginErr').textContent = 'Compila tutti i campi.'; return; }
-    try {
-      busy('Controllo la chiave…'); await tryLogin();
-      store.set('ss_token', TOKEN); store.set('ss_repo', REPO);
-      idle(); $('#login').hidden = true; showApp();
-    } catch (e) {
-      idle();
-      $('#loginErr').textContent = e.status === 404 ? 'Repository non trovato, oppure la chiave non ha accesso a questo repository.' : e.status === 401 ? 'Chiave non valida.' : e.status === 403 ? 'La chiave non ha il permesso di scrittura (Contents: Read and write).' : 'Errore di connessione.';
+    if (TOKEN && REPO) {
+      try { busy('Apro lo studio…'); await tryLogin(); idle(); showApp(); return; }
+      catch (e) { idle(); TOKEN = ''; store.del('ss_token'); }
     }
+    $('#login').hidden = false;
+    box = REPO ? await fetchBox() : null;
+    showSetup(!box);
+  }
+  async function enter() {
+    const pw = $('#pw').value;
+    $('#loginErr').textContent = '';
+    if (!pw) { $('#pw').focus(); return; }
+    if (!box) box = await fetchBox();
+    if (!box) { showSetup(true); $('#setupErr').textContent = 'Non c\'è ancora nessuna password: creala qui sotto.'; return; }
+    busy('Apro lo studio…');
+    try { TOKEN = await unlock(box, pw); }
+    catch (e) { idle(); $('#loginErr').textContent = 'Password sbagliata. Riprova.'; $('#pw').select(); return; }
+    try {
+      await tryLogin();
+      store.set('ss_token', TOKEN); store.set('ss_repo', REPO);
+      idle(); $('#login').hidden = true; $('#pw').value = ''; showApp();
+    } catch (e) {
+      idle(); TOKEN = '';
+      $('#loginErr').textContent = e.status === 401 || e.status === 403 || e.status === 404
+        ? 'La password è giusta, ma la chiave di GitHub è scaduta. Tocca “Prima volta, o password dimenticata?” e mettine una nuova.'
+        : 'Errore di connessione. Riprova.';
+    }
+  }
+  $('#loginBtn').onclick = enter;
+  $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') enter(); });
+  $('#setupBtn').onclick = async () => {
+    const tok = $('#tok').value.trim(), p1 = $('#np1').value, p2 = $('#np2').value;
+    if (!REPO) REPO = $('#repo').value.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, '');
+    const err = $('#setupErr'); err.textContent = '';
+    if (!tok || !REPO) { err.textContent = 'Incolla la chiave di GitHub.'; return; }
+    const pp = pwProblem(p1, p2); if (pp) { err.textContent = pp; return; }
+    TOKEN = tok;
+    try { busy('Controllo la chiave…'); await tryLogin(); }
+    catch (e) {
+      idle(); TOKEN = '';
+      err.textContent = e.status === 404 ? 'Repository non trovato, oppure la chiave non ha accesso a questo repository.' : e.status === 401 ? 'Chiave non valida.' : e.status === 403 ? 'La chiave non ha il permesso di scrittura (Contents: Read and write).' : 'Errore di connessione.';
+      return;
+    }
+    try {
+      busy('Salvo la password…'); box = await saveBox(p1);
+      store.set('ss_token', TOKEN); store.set('ss_repo', REPO);
+      ['#tok', '#np1', '#np2'].forEach(s => $(s).value = '');
+      $('#login').hidden = true; showApp();
+      done('Fatto!', 'Da ora, su qualsiasi telefono, per entrare nello studio basta la password.');
+    } catch (e) { fail(e); }
   };
-  $('#logout').onclick = () => { if (confirm('Vuoi uscire? Dovrai reinserire la chiave.')) { store.del('ss_token'); location.reload(); } };
+  $('#logout').onclick = () => { if (confirm('Vuoi uscire? Per rientrare ti servirà la password.')) { store.del('ss_token'); location.reload(); } };
   function showApp() { $('#app').hidden = false; $('#logout').hidden = false; loadList(); loadNotes(); loadBio(); }
 
   /* ---------- schede ---------- */
@@ -306,7 +372,7 @@
   /* ---------- elenchi ---------- */
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const rawUrl = p => `https://raw.githubusercontent.com/${REPO}/HEAD/${p}`;
-  const thumbImg = it => `<img src="${esc(rawUrl(it.thumb || it.img))}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${esc(it.thumb || it.img)}'">`;
+  const thumbImg = it => `<img src="${esc(rawUrl(it.thumb || it.img))}" alt="" loading="lazy" onerror="this.onerror=null;this.src='../${esc(it.thumb || it.img)}'">`;
   const moveBtns = (i, n) => `<button data-a="up" ${i === 0 ? 'disabled style="opacity:.3"' : ''}>↑</button><button data-a="down" ${i === n - 1 ? 'disabled style="opacity:.3"' : ''}>↓</button>`;
   const swap = (l, id, dir) => { const i = l.findIndex(x => x.id === id), j = i + (dir === 'up' ? -1 : 1); if (i > -1 && j >= 0 && j < l.length) [l[i], l[j]] = [l[j], l[i]]; return l; };
 
@@ -437,16 +503,16 @@
     } catch (e) { fail(e); }
   };
 
-  /* ---------- entra da un altro telefono ---------- */
-  $('#shareKey').onclick = async () => {
-    const link = location.origin + location.pathname + '#chiave=' + encodeURIComponent(TOKEN) + '&repo=' + encodeURIComponent(REPO);
+  /* ---------- cambia password ---------- */
+  $('#chPw').onclick = async () => {
+    const p1 = $('#cp1').value, p2 = $('#cp2').value, pp = pwProblem(p1, p2);
+    if (pp) { say('Controlla la password', pp); return; }
     try {
-      if (navigator.share) { await navigator.share({ title: 'studio sunshyray', url: link }); return; }
-      await navigator.clipboard.writeText(link);
-      done('Link copiato', 'Mandalo solo a lei (o a te stesso) e poi cancella il messaggio.');
-    } catch (e) { if (e.name !== 'AbortError') { $('#shareOut').hidden = false; $('#shareOut').value = link; $('#shareOut').select(); } }
+      busy('Cambio la password…'); box = await saveBox(p1);
+      $('#cp1').value = $('#cp2').value = '';
+      done('Password cambiata', 'Da ora usa quella nuova, su tutti i telefoni.');
+    } catch (e) { fail(e); }
   };
 
-  addEventListener('hashchange', () => { if (location.hash.includes('chiave=')) location.reload(); });
   boot();
 })();
