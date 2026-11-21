@@ -365,6 +365,11 @@
 
   /* ---------------- avvio ---------------- */
   $('#year').textContent = new Date().getFullYear();
+  let taps = [];
+  $('.sig').addEventListener('click', () => {
+    const now = Date.now(); taps = taps.filter(x => now - x < 2500).concat(now);
+    if (taps.length >= 5) location.href = 'admin.html';
+  });
   load().then(() => {
     applyLang(true);
     const i = works.findIndex(w => w.id === decodeURIComponent(location.hash.slice(1)));

@@ -21,6 +21,16 @@ Sito portfolio e vetrina dei dipinti di **sunshyray**. È un sito statico ospita
    - Premi *Generate token* e copia la chiave, che inizia con `github_pat_…`.
 3. Sul telefono di lei apri `https://<utente>.github.io/<repo>/admin.html` e incolla la chiave. Va fatto una volta sola. Poi aggiungi la pagina alla schermata Home ("Condividi → Aggiungi a Home"), così diventa come un'app.
 
+## Come entra lei nello studio
+
+Lo studio è una pagina a parte: sul sito pubblico non c'è nessun link e nessun segno che esista, per nessuno.
+
+- **Dall'icona sulla schermata Home** (il modo più semplice, dopo il punto 3).
+- **Con un link già pronto**: nello studio, scheda *Bio* → *Entrare da un altro telefono* → *Crea il link per entrare*. Il link contiene la chiave: lo apre sul suo telefono ed è dentro, senza scrivere niente. Poi va cancellato il messaggio.
+- **Porta nascosta**: sul sito, 5 tocchi veloci sul logo "sunshyray" in alto aprono lo studio.
+
+Chi trovasse per caso `admin.html` vede solo la richiesta della chiave: senza chiave non può fare niente.
+
 > La chiave resta salvata solo nel browser di quel telefono o computer: non viene mai scritta nel repo. Non va condivisa con nessuno.
 
 ## Come si usa lo studio

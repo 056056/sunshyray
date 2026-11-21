@@ -82,9 +82,16 @@
     if (!r.permissions || !r.permissions.push) { const e = new Error('nopush'); e.status = 403; throw e; }
   }
   async function boot() {
+    // link "entra con un tocco": admin.html#chiave=...&repo=...
+    const hp = new URLSearchParams(location.hash.slice(1));
+    if (hp.get('chiave')) {
+      TOKEN = hp.get('chiave'); store.set('ss_token', TOKEN);
+      if (hp.get('repo')) { REPO = hp.get('repo'); store.set('ss_repo', REPO); }
+      history.replaceState(null, '', location.pathname);
+    }
     if (!REPO) $('#repoField').hidden = false;
     if (!TOKEN || !REPO) { $('#login').hidden = false; return; }
-    try { busy('Apro lo studio…'); await tryLogin(); idle(); showApp(); }
+    try { busy('Apro lo studio…'); await tryLogin(); store.set('ss_repo', REPO); idle(); showApp(); }
     catch (e) { idle(); $('#login').hidden = false; $('#loginErr').textContent = 'La chiave salvata non funziona più: inseriscine una nuova.'; }
   }
   $('#loginBtn').onclick = async () => {
@@ -325,19 +332,20 @@
         </div>`).join('');
     } catch (e) { box.innerHTML = '<p class="note">Non riesco a caricare le opere. Controlla la connessione.</p>'; }
   }
+  function startEdit(w) {
+    resetForm(); editing = w.id;
+    for (const k in F) $(F[k]).value = w[k] || '';
+    $(`input[name=stato][value=${w.stato === 'venduta' ? 'venduta' : 'disponibile'}]`).checked = true;
+    $('#preview').src = rawUrl(w.img); $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
+    $('#formTitle').textContent = 'Modifica opera';
+    $('#formLead').textContent = 'Cambia quello che vuoi. Se non tocchi la foto, resta quella di prima.';
+    $('#publish').textContent = 'Salva modifiche'; $('#cancelEdit').hidden = false;
+    tab('new');
+  }
   $('#list').addEventListener('click', async e => {
     const b = e.target.closest('button[data-a]'); if (!b) return;
     const w = works[+b.closest('.item').dataset.i], a = b.dataset.a;
-    if (a === 'edit') {
-      resetForm(); editing = w.id;
-      for (const k in F) $(F[k]).value = w[k] || '';
-      $(`input[name=stato][value=${w.stato === 'venduta' ? 'venduta' : 'disponibile'}]`).checked = true;
-      $('#preview').src = rawUrl(w.img); $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
-      $('#formTitle').textContent = 'Modifica opera';
-      $('#formLead').textContent = 'Cambia quello che vuoi. Se non tocchi la foto, resta quella di prima.';
-      $('#publish').textContent = 'Salva modifiche'; $('#cancelEdit').hidden = false;
-      tab('new'); return;
-    }
+    if (a === 'edit') { startEdit(w); return; }
     try {
       if (a === 'toggle') {
         busy('Aggiorno…');
@@ -429,5 +437,16 @@
     } catch (e) { fail(e); }
   };
 
+  /* ---------- entra da un altro telefono ---------- */
+  $('#shareKey').onclick = async () => {
+    const link = location.origin + location.pathname + '#chiave=' + encodeURIComponent(TOKEN) + '&repo=' + encodeURIComponent(REPO);
+    try {
+      if (navigator.share) { await navigator.share({ title: 'studio sunshyray', url: link }); return; }
+      await navigator.clipboard.writeText(link);
+      done('Link copiato', 'Mandalo solo a lei (o a te stesso) e poi cancella il messaggio.');
+    } catch (e) { if (e.name !== 'AbortError') { $('#shareOut').hidden = false; $('#shareOut').value = link; $('#shareOut').select(); } }
+  };
+
+  addEventListener('hashchange', () => { if (location.hash.includes('chiave=')) location.reload(); });
   boot();
 })();

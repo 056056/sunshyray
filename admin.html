@@ -82,6 +82,15 @@ details[open] summary{margin-bottom:4px}
 .note li{margin:4px 0}
 .err{color:var(--red);font-size:14px;margin-top:10px;min-height:1em}
 
+/* come il sito: muro, carta, nastro adesivo */
+body{background:var(--ink) url(img/muro.jpg) 0 0/768px repeat}
+.drop,.item,details,.note,.crop,.tabs,.field input,.field textarea,.status label{background-color:var(--ink-2);background-image:url(img/carta.jpg);background-size:384px}
+.drop{border-radius:6px;box-shadow:0 1px 0 rgba(0,0,0,.04),0 22px 34px -22px rgba(40,30,20,.5)}
+.drop::before{content:"";position:absolute;top:-6px;left:50%;width:110px;height:28px;margin-left:-55px;background:rgba(222,210,180,.8);transform:rotate(-3deg);mix-blend-mode:multiply}
+h1{font-family:var(--hand);font-size:clamp(56px,13vw,84px);line-height:.9}
+h1::after{content:"";display:block;width:min(260px,70%);height:12px;margin-top:4px;background:no-repeat left/100% 100% url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 14' preserveAspectRatio='none'%3E%3Cpath d='M3 9 C 40 3, 70 12, 110 7 S 170 3, 197 8' fill='none' stroke='%23b0241c' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E")}
+.lead{font-family:var(--serif);font-size:19px;line-height:1.45}
+
 /* overlay */
 .ov{position:fixed;inset:0;z-index:50;background:rgba(242,237,227,.94);backdrop-filter:blur(6px);display:none;place-items:center;text-align:center;padding:24px}
 .ov.on{display:grid;animation:fade .4s var(--ease)}
@@ -118,7 +127,7 @@ details[open] summary{margin-bottom:4px}
       studio
     </a>
     <div style="display:flex;gap:16px">
-      <a class="small-btn" href="./" target="_blank">vedi il sito ↗</a>
+      <a class="small-btn" href="./">vedi il sito ↗</a>
       <button class="small-btn" id="logout" hidden>esci</button>
     </div>
   </header>
@@ -240,6 +249,11 @@ details[open] summary{margin-bottom:4px}
       <div class="field"><label for="b-mail">Email</label><input id="b-mail" type="email" placeholder="nome@email.com"></div>
       <div class="field"><label for="b-wa">WhatsApp <small>(con prefisso, es. 393331234567, facoltativo)</small></label><input id="b-wa" inputmode="tel"></div>
       <button class="go" id="saveBio">Salva</button>
+
+      <h2 class="h2s">Entrare da un altro telefono</h2>
+      <p class="note">Crea un link che apre lo studio <b>già con la chiave dentro</b>: lo apri sul telefono e sei dentro, senza scrivere niente.<br><br><b>Attenzione:</b> chi ha questo link può cambiare il sito. Mandalo solo a te stessa, poi cancella il messaggio.</p>
+      <button class="ghost" id="shareKey">Crea il link per entrare</button>
+      <textarea id="shareOut" hidden readonly style="width:100%;margin-top:10px;font-size:13px;padding:10px;border-radius:10px;border:1px solid var(--line)"></textarea>
     </div>
   </section>
 </div>
