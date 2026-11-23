@@ -183,6 +183,7 @@
 
   /* ---------- schede ---------- */
   function tab(name) {
+    if (name === 'nb' || name === 'new') placeEditor(name);
     $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === name));
     $$('.panel').forEach(p => p.classList.toggle('on', p.id === 'p-' + name));
     scrollTo({ top: 0, behavior: 'smooth' });
@@ -476,8 +477,8 @@
     }
     const tip = $('#cropTip'); tip.classList.toggle('found', !!found);
     tip.innerHTML = found
-      ? '<b>Ho trovato il quadro ✓</b> e l\'ho già messo dritto. Controlla che la cornice stia sui bordi della tela: i pallini rossi spostano gli angoli, quelli bianchi un lato (tenendoli premuti li vedi da vicino). Poi premi <b>Ritaglia</b>.'
-      : '<b>Porta la cornice sui bordi del quadro:</b> i pallini rossi spostano gli angoli, quelli bianchi un lato (tenendoli premuti li vedi da vicino). Se la foto è storta, girala con <b>Inclinazione</b>. Poi premi <b>Ritaglia</b>.';
+      ? (mode === 'nb' ? '<b>Ho trovato la pagina ✓</b> e l\'ho già messa dritta. Controlla che la cornice stia sui bordi del foglio' : '<b>Ho trovato il quadro ✓</b> e l\'ho già messo dritto. Controlla che la cornice stia sui bordi della tela') + ': i pallini rossi spostano gli angoli, quelli bianchi un lato (tenendoli premuti li vedi da vicino). Poi premi <b>Ritaglia</b>.'
+      : '<b>Porta la cornice sui bordi ' + (mode === 'nb' ? 'della pagina' : 'del quadro') + ':</b> i pallini rossi spostano gli angoli, quelli bianchi un lato (tenendoli premuti li vedi da vicino). Se la foto è storta, girala con <b>Inclinazione</b>. Poi premi <b>Ritaglia</b>.';
     renderRotated(); showAng();
     $('#crop').hidden = false; $('#drop').hidden = true; $('#recrop').hidden = true;
     drawCrop(); cropResult();
@@ -552,7 +553,7 @@
     cancelAnimationFrame(fpRaf);
     fpRaf = requestAnimationFrame(() => {
       const fp = $('#floatPrev'), tune = $('#tune');
-      if (tune.hidden || !$('#p-new').classList.contains('on') || !lastUrl) { fp.hidden = true; return; }
+      if (tune.hidden || !$('#editor').closest('.panel').classList.contains('on') || !lastUrl) { fp.hidden = true; return; }
       const m = $('#mCv').getBoundingClientRect(), t = tune.getBoundingClientRect();
       const mockGone = m.bottom < 60 || m.top > innerHeight - 40, tuneOn = t.top < innerHeight && t.bottom > 0;
       fp.hidden = !(mockGone && tuneOn);
@@ -610,7 +611,7 @@
     const end = () => { st = null; cv.classList.remove('dragging'); };
     cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
   })();
-  const ratioNow = () => corners ? parseDims($('#f-dim').value) : 0;
+  const ratioNow = () => corners && mode !== 'nb' ? parseDims($('#f-dim').value) : 0;
   function render(img, p) {
     const W = img.width, H = img.height;
     const th = p.rot * Math.PI / 180, co = Math.abs(Math.cos(th)), si = Math.abs(Math.sin(th));
@@ -654,7 +655,7 @@
   async function showPreview() {
     geoDirty = true; refreshMock(); syncTune();
     $('#tune').hidden = false; $('#retouchOld').hidden = true; $('#drop').classList.add('full'); checkFloat();
-    $('.mockCap').textContent = 'così apparirà sul sito · trascina la tela col dito per spostarla';
+    $('.mockCap').textContent = (mode === 'nb' ? 'così apparirà nel quaderno' : 'così apparirà sul sito') + ' · trascina col dito per spostarla';
     $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
     $('#crop').hidden = true; $('#drop').hidden = false; $('#recrop').hidden = !corners && !src;
     photoReady = true;
@@ -668,7 +669,7 @@
     try { busy('Apro la foto…'); src = await decode(file); T = { ...T0 }; idle(); openCrop(false); }
     catch (e) { fail(new Error('image')); }
   }
-  wireDrop($('#drop'), ['#file', '#fileCam', '#file2', '#fileCam2'].map(s => $(s)), handleFile, () => $('#p-new').classList.contains('on'));
+  wireDrop($('#drop'), ['#file', '#fileCam', '#file2', '#fileCam2'].map(s => $(s)), handleFile, () => $('#editor').closest('.panel').classList.contains('on'));
 
   /* ---------- modulo opera ---------- */
   let editing = null;
@@ -678,13 +679,30 @@
     o.stato = document.querySelector('input[name=stato]:checked').value;
     return o;
   }
-  function resetForm() {
-    $('#drop').classList.remove('full'); $('#floatPrev').hidden = true; $('.mockCap').textContent = 'così apparirà sul sito';
-    editing = null; src = null; corners = null; photoReady = false; base = null; T = { ...T0 }; $('#tune').hidden = true; $('#retouchOld').hidden = true; $('#mCv').style.removeProperty('--img');
-    for (const k in F) $(F[k]).value = '';
-    $('input[name=stato][value=disponibile]').checked = true;
+  function resetPhoto() {
+    $('#drop').classList.remove('full'); $('#floatPrev').hidden = true; $('.mockCap').textContent = mode === 'nb' ? 'così apparirà nel quaderno' : 'così apparirà sul sito';
+    src = null; corners = null; photoReady = false; base = null; lastUrl = ''; T = { ...T0 }; $('#tune').hidden = true; $('#retouchOld').hidden = true; $('#mCv').style.removeProperty('--img');
     $('#dropEmpty').hidden = false; $('#dropFull').hidden = true; $('#drop').hidden = false;
     $('#crop').hidden = true; $('#recrop').hidden = true;
+  }
+  // l'editor della foto si sposta fra la scheda Opera e la scheda Quaderno
+  let mode = 'new';
+  function placeEditor(name) {
+    const slot = $(name === 'nb' ? '#nbSlot' : '#newSlot'), ed = $('#editor');
+    if (ed.parentNode === slot) return;
+    mode = name; slot.appendChild(ed); $('#drop').classList.toggle('nbmode', name === 'nb');
+    $('#bigTouch').textContent = name === 'nb' ? 'Fotografa la pagina' : 'Fotografa il quadro';
+    $('#cropResTxt').innerHTML = '← <b>così verrà</b>: dritto, senza ' + (name === 'nb' ? 'tavolo' : 'muro') + ' intorno. Se non ti torna, sposta i pallini.';
+    $('#dropTip').innerHTML = name === 'nb'
+      ? 'Consiglio: fotografa la pagina <b>dall\'alto</b>, con <b>un po\' di tavolo intorno</b> e buona luce. I bordi li trovo io.'
+      : 'Consiglio: mettiti <b>di fronte</b> al quadro, lascia <b>un po\' di muro intorno</b>, buona luce e niente flash. Gli angoli li trovo io.';
+    resetPhoto();
+  }
+  function resetForm() {
+    resetPhoto();
+    editing = null;
+    for (const k in F) $(F[k]).value = '';
+    $('input[name=stato][value=disponibile]').checked = true;
     $('#formTitle').textContent = 'Nuova opera';
     $('#formLead').textContent = 'Fotografa il quadro: lo trovo e lo metto dritto io, tu controlli e premi Ritaglia. Poi ritocchi se serve, scrivi due righe e premi Pubblica.';
     $('#publish').textContent = 'Pubblica'; $('#cancelEdit').hidden = true;
@@ -694,7 +712,7 @@
   $('#publish').onclick = async () => {
     const data = readForm();
     if (!$('#crop').hidden) { say('Prima il ritaglio', 'Premi "Ritaglia" (o "Usa la foto intera") sotto la foto.'); return; }
-    if (!editing && !photoReady) { say('Manca la foto', 'Trascina o scegli la foto del quadro.'); return; }
+    if (!editing && !photoReady) { say('Manca la foto', 'Scatta o scegli la foto del quadro.'); return; }
     if (!data.titolo) { $('#f-titolo').focus(); $('#f-titolo').style.borderColor = 'var(--red)'; setTimeout(() => $('#f-titolo').style.borderColor = '', 1500); return; }
     try {
       let imgFields = {};
@@ -758,7 +776,7 @@
     } catch (e) { box.innerHTML = '<p class="note">Non riesco a caricare le opere. Controlla la connessione.</p>'; }
   }
   function startEdit(w) {
-    resetForm(); editing = w.id;
+    placeEditor('new'); resetForm(); editing = w.id;
     for (const k in F) $(F[k]).value = w[k] || '';
     $(`input[name=stato][value=${w.stato === 'venduta' ? 'venduta' : 'disponibile'}]`).checked = true;
     $('#preview').src = rawUrl(w.img); $('#mCv').style.setProperty('--img', `url("${rawUrl(w.thumb || w.img)}")`); $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
@@ -802,28 +820,22 @@
   });
 
   /* ---------- quaderno ---------- */
-  let nbSrc = null, notes = [];
-  async function handleNbFile(file) {
-    try {
-      busy('Apro la foto…'); nbSrc = await decode(file);
-      $('#nbPreview').src = scaled(nbSrc, 900).toDataURL('image/jpeg', .85);
-      $('#nbEmpty').hidden = true; $('#nbFull').hidden = false; idle();
-    } catch (e) { fail(new Error('image')); }
-  }
-  wireDrop($('#nbDrop'), ['#nbFile', '#nbCam', '#nbFile2', '#nbCam2'].map(s => $(s)), handleNbFile, () => $('#p-nb').classList.contains('on'));
+  let notes = [];
   $('#nbAdd').onclick = async () => {
-    if (!nbSrc) { say('Manca la foto', 'Trascina o scegli la foto della pagina.'); return; }
+    if (!$('#crop').hidden) { say('Prima il ritaglio', 'Premi "Ritaglia" (o "Usa la foto intera") sotto la foto.'); return; }
+    if (!photoReady || !src) { say('Manca la foto', 'Scatta o scegli la foto della pagina.'); return; }
     try {
-      busy('Carico la pagina…', 'Non chiudere la pagina');
+      busy('Preparo la pagina…', 'Non chiudere la pagina');
+      await new Promise(r => setTimeout(r, 30));
       const id = 'pagina-' + Date.now().toString(36);
-      const full = scaled(nbSrc, 2000), th = scaled(full, 700);
+      const full = finalImage(), th = scaled(full, 700);
       const fp = `quaderno/${id}.jpg`, tp = `quaderno/${id}-s.jpg`;
-      await putFile(fp, await blobB64(await toBlob(full, .85)), 'Quaderno: nuova pagina');
+      busy('Carico la pagina…', 'Non chiudere la pagina');
+      await putFile(fp, await blobB64(await toBlob(full, .86)), 'Quaderno: nuova pagina');
       await putFile(tp, await blobB64(await toBlob(th, .8)), 'Quaderno: miniatura');
       const nota = $('#nb-nota').value.trim(), nota_en = $('#nb-nota-en').value.trim();
       await updateList(NOTES, l => [{ id, img: fp, thumb: tp, w: full.width, h: full.height, nota, nota_en }, ...l], 'Quaderno: nuova pagina');
-      nbSrc = null; $('#nb-nota').value = ''; $('#nb-nota-en').value = '';
-      $('#nbEmpty').hidden = false; $('#nbFull').hidden = true;
+      $('#nb-nota').value = ''; $('#nb-nota-en').value = ''; resetPhoto();
       done('Aggiunta al quaderno', 'Sarà visibile sul sito tra un paio di minuti.');
       loadNotes();
     } catch (e) { fail(e); }

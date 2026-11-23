@@ -196,6 +196,13 @@ h1::after{content:"";display:block;width:min(260px,70%);height:12px;margin-top:4
 .floatPrev small{display:block;font-family:var(--hand);font-size:18px;color:var(--dim);line-height:1.3}
 .floatPrev[hidden]{display:none}
 
+/* modalità quaderno: la pagina appare come nel quaderno del sito */
+#drop.nbmode .mock{background:#f6f2ea url(../img/carta.jpg) 0 0/384px;background-image:linear-gradient(rgba(70,110,160,.13) 1px,transparent 1px),linear-gradient(90deg,rgba(70,110,160,.13) 1px,transparent 1px),url(../img/carta.jpg);background-size:26px 26px,26px 26px,384px}
+#drop.nbmode .mock .cv{background:#fbf9f4;padding:9px 9px 12px;transform:rotate(-1.4deg);box-shadow:0 2px 0 rgba(0,0,0,.04),0 18px 26px -14px rgba(40,30,20,.5)}
+#drop.nbmode .mock .cv img{filter:brightness(1.12) contrast(1.08)}
+#drop.nbmode .mock .cv::after,#drop.nbmode .mock .weave{display:none}
+#drop.nbmode .mock .cv::before{background-image:none;background-color:rgba(222,210,180,.82);filter:none;transform:translateX(-50%) rotate(-3deg);top:-12px;left:50%;width:96px;height:26px;box-shadow:none;mix-blend-mode:multiply}
+
 /* overlay */
 .ov{position:fixed;inset:0;z-index:50;background:rgba(242,237,227,.94);backdrop-filter:blur(6px);display:none;place-items:center;text-align:center;padding:24px}
 .ov.on{display:grid;animation:fade .4s var(--ease)}
@@ -346,15 +353,16 @@ header{flex-wrap:wrap}
     <div class="panel on" id="p-new">
       <h1 id="formTitle">Nuova opera</h1>
       <p class="lead" id="formLead">Fotografa il quadro: lo trovo e lo metto dritto io, tu controlli e premi Ritaglia. Poi ritocchi se serve, scrivi due righe e premi Pubblica.</p>
+      <div id="newSlot"><div id="editor">
       <div class="drop" id="drop">
         <div id="dropEmpty">
           <svg class="sp" viewBox="-100 -100 200 200"><path id="spD" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg>
-          <div class="big"><span class="only-touch">Fotografa il quadro</span><span class="only-mouse">Trascina qui la foto</span></div>
+          <div class="big"><span class="only-touch" id="bigTouch">Fotografa il quadro</span><span class="only-mouse">Trascina qui la foto</span></div>
           <div class="picks">
             <label class="pick pick--cam"><input type="file" id="fileCam" accept="image/*" capture="environment">📷 Scatta la foto</label>
             <label class="pick"><input type="file" id="file" accept="image/*">🖼 Scegli dalla galleria</label>
           </div>
-          <p class="tip">Consiglio: mettiti <b>di fronte</b> al quadro, lascia <b>un po' di muro intorno</b>, buona luce e niente flash. Gli angoli li trovo io.</p>
+          <p class="tip" id="dropTip">Consiglio: mettiti <b>di fronte</b> al quadro, lascia <b>un po' di muro intorno</b>, buona luce e niente flash. Gli angoli li trovo io.</p>
         </div>
         <div id="dropFull" hidden>
           <button type="button" class="ghost" id="retouchOld" hidden>✎ Ritocca questa foto</button>
@@ -406,7 +414,7 @@ header{flex-wrap:wrap}
           <div class="slh"><span>Inclinazione<small>se la foto è storta, girala finché il quadro sta dritto nella cornice</small></span><output id="caOut" title="tocca per azzerare">0°</output></div>
           <div class="slc"><button type="button" data-d="-1" aria-label="meno">−</button><input type="range" id="caRange" min="-15" max="15" step="0.1" value="0" aria-label="Inclinazione"><button type="button" data-d="1" aria-label="più">+</button></div>
         </div>
-        <div class="cropRes"><img id="cropRes" alt=""><p>← <b>così verrà</b>: dritto, senza muro intorno. Se non ti torna, sposta i pallini.</p></div>
+        <div class="cropRes"><img id="cropRes" alt=""><p id="cropResTxt">← <b>così verrà</b>: dritto, senza muro intorno. Se non ti torna, sposta i pallini.</p></div>
         <button type="button" class="ghost" id="cropRot">↻ Gira la foto di 90°</button>
         <div class="row">
           <button class="ghost" id="cropSkip">Usa la foto intera</button>
@@ -414,6 +422,7 @@ header{flex-wrap:wrap}
         </div>
       </div>
 
+      </div></div>
       <div class="field"><label for="f-titolo">Titolo *</label><input id="f-titolo" placeholder="es. Vortice rosso"></div>
       <div class="field"><label for="f-desc">Descrizione</label><textarea id="f-desc" placeholder="Cosa racconta questo quadro? Perché l'hai dipinto?"></textarea></div>
       <div class="row">
@@ -451,22 +460,8 @@ header{flex-wrap:wrap}
     <!-- QUADERNO -->
     <div class="panel" id="p-nb">
       <h1>Il mio quaderno</h1>
-      <p class="lead">Pagine, schizzi, appunti. Qui la foto va bene così com'è: niente ritaglio.</p>
-      <div class="drop" id="nbDrop">
-        <div id="nbEmpty">
-          <div class="big">Aggiungi una pagina</div>
-          <div class="picks">
-            <label class="pick pick--cam"><input type="file" id="nbCam" accept="image/*" capture="environment">📷 Scatta la foto</label>
-            <label class="pick"><input type="file" id="nbFile" accept="image/*">🖼 Scegli dalla galleria</label>
-          </div>
-        </div>
-        <div id="nbFull" hidden><img id="nbPreview" alt="">
-          <div class="picks">
-            <label class="pick pick--cam"><input type="file" id="nbCam2" accept="image/*" capture="environment">📷 Rifai la foto</label>
-            <label class="pick"><input type="file" id="nbFile2" accept="image/*">🖼 Un'altra dalla galleria</label>
-          </div>
-        </div>
-      </div>
+      <p class="lead">Pagine, schizzi, appunti. Fotografa la pagina: la trovo e la metto dritta io, tu controlli e premi Ritaglia. Poi ritocchi se serve e premi Aggiungi.</p>
+      <div id="nbSlot"></div>
       <div class="field"><label for="nb-nota">Nota scritta a mano <small>(facoltativa)</small></label><input id="nb-nota" placeholder="es. notte di marzo"></div>
       <div class="field"><label for="nb-nota-en">Nota in inglese <small>(facoltativa)</small></label><input id="nb-nota-en"></div>
       <button class="go" id="nbAdd">Aggiungi al quaderno</button>
@@ -508,7 +503,7 @@ header{flex-wrap:wrap}
   </div>
 </div>
 
-<script src="../config.js?v=20261123f"></script>
-<script src="../js/admin.js?v=20261123f"></script>
+<script src="../config.js?v=20261123g"></script>
+<script src="../js/admin.js?v=20261123g"></script>
 </body>
 </html>
