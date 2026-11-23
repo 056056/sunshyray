@@ -492,6 +492,8 @@
   const TUNE = [
     ['g', 'Forma'],
     ['rot', 'Inclinazione', -15, 15, .1, '°', 'gira la foto per raddrizzarla'],
+    ['px', 'Sposta ← →', -20, 20, .2, '%', 'oppure trascina la tela col dito'],
+    ['py', 'Sposta ↑ ↓', -20, 20, .2, '%', 'oppure trascina la tela col dito'],
     ['kv', 'Prospettiva alto / basso', -15, 15, .5, '', 'se la tela sembra più stretta sopra o sotto'],
     ['kh', 'Prospettiva sinistra / destra', -15, 15, .5, '', 'se un lato sembra più corto dell\'altro'],
     ['g', 'Margini  ( − allarga · + stringe )'],
@@ -503,10 +505,10 @@
     ['warm', 'Calore', -40, 40, 1, '', '− più freddo · + più caldo'],
     ['sharp', 'Nitidezza', 0, 100, 1, '', 'dettagli e pennellate più definiti']
   ];
-  const GEO = ['kv', 'kh', 'top', 'bottom', 'left', 'right'];
+  const GEO = ['px', 'py', 'kv', 'kh', 'top', 'bottom', 'left', 'right'];
   const T0 = Object.fromEntries(TUNE.filter(r => r[0] !== 'g').map(r => [r[0], 0]));
   let T = { ...T0 }, base = null, tuneRaf = 0, geoDirty = false, gridLock = false, gridTimer = 0;
-  const GROUP = { rot: 'forma', kv: 'forma', kh: 'forma', top: 'margini', bottom: 'margini', left: 'margini', right: 'margini' };
+  const GROUP = { rot: 'forma', px: 'forma', py: 'forma', kv: 'forma', kh: 'forma', top: 'margini', bottom: 'margini', left: 'margini', right: 'margini' };
   $('#tuneRows').innerHTML = TUNE.map(r => r[0] === 'g' ? `<p class="tg" data-g="${r[1].startsWith('Forma') ? 'forma' : r[1].startsWith('Margini') ? 'margini' : 'colore'}">${r[1]}</p>` : `
     <div class="sl" data-k="${r[0]}" data-g="${GROUP[r[0]] || 'colore'}">
       <div class="slh"><span>${r[1]}${r[6] ? `<small>${r[6]}</small>` : ''}</span><output data-o="${r[0]}" title="tocca per azzerare">0${r[5]}</output></div>
@@ -586,8 +588,28 @@
       add(q2, lerp(q2, q1, b), lerp(q2, q3, r), lerp(q2, q3, -kv), lerp(q2, q1, kh)),
       add(q3, lerp(q3, q0, b), lerp(q3, q2, l), lerp(q3, q2, -kv), lerp(q3, q0, -kh))
     ];
-    return P.map(([x, y]) => ({ x, y }));
+    // spostamento: trascinando la tela a destra, il quadro va a destra (la "finestra" va a sinistra)
+    const ox = -(p.px / 100) * (q1[0] - q0[0]) - (p.py / 100) * (q3[0] - q0[0]);
+    const oy = -(p.px / 100) * (q1[1] - q0[1]) - (p.py / 100) * (q3[1] - q0[1]);
+    return P.map(([x, y]) => ({ x: x + ox, y: y + oy }));
   }
+  // trascinare col dito sulla tela finta sposta il quadro
+  (() => {
+    const cv = $('#mCv'); let st = null;
+    cv.addEventListener('pointerdown', e => {
+      if (!src || $('#tune').hidden) return;
+      e.preventDefault(); cv.setPointerCapture(e.pointerId);
+      const r = cv.getBoundingClientRect(); st = { x: e.clientX, y: e.clientY, w: r.width, h: r.height, px: T.px, py: T.py };
+      cv.classList.add('dragging');
+    });
+    cv.addEventListener('pointermove', e => {
+      if (!st) return;
+      setT('px', st.px + (e.clientX - st.x) / st.w * 100);
+      setT('py', st.py + (e.clientY - st.y) / st.h * 100);
+    });
+    const end = () => { st = null; cv.classList.remove('dragging'); };
+    cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  })();
   const ratioNow = () => corners ? parseDims($('#f-dim').value) : 0;
   function render(img, p) {
     const W = img.width, H = img.height;
@@ -632,6 +654,7 @@
   async function showPreview() {
     geoDirty = true; refreshMock(); syncTune();
     $('#tune').hidden = false; $('#retouchOld').hidden = true; $('#drop').classList.add('full'); checkFloat();
+    $('.mockCap').textContent = 'così apparirà sul sito · trascina la tela col dito per spostarla';
     $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
     $('#crop').hidden = true; $('#drop').hidden = false; $('#recrop').hidden = !corners && !src;
     photoReady = true;
@@ -656,7 +679,7 @@
     return o;
   }
   function resetForm() {
-    $('#drop').classList.remove('full'); $('#floatPrev').hidden = true;
+    $('#drop').classList.remove('full'); $('#floatPrev').hidden = true; $('.mockCap').textContent = 'così apparirà sul sito';
     editing = null; src = null; corners = null; photoReady = false; base = null; T = { ...T0 }; $('#tune').hidden = true; $('#retouchOld').hidden = true; $('#mCv').style.removeProperty('--img');
     for (const k in F) $(F[k]).value = '';
     $('input[name=stato][value=disponibile]').checked = true;
