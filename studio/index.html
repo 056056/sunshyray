@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>studio</title>
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://raw.githubusercontent.com; connect-src 'self' https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#f2ede3">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -119,10 +121,28 @@ h1::after{content:"";display:block;width:min(260px,70%);height:12px;margin-top:4
 .tune{margin-top:14px;text-align:left;background:var(--ink-2) url(../img/carta.jpg) 0 0/384px;border:1px solid var(--line);border-radius:16px;padding:12px 16px 6px}
 .tune h3{font-family:var(--hand);font-weight:400;font-size:34px;line-height:1}
 .tg{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:14px 0 0}
-.sl{display:grid;grid-template-columns:92px 1fr 54px;align-items:center;gap:10px;padding:4px 0}
-.sl span{font-size:14px}
-.sl output{font-size:13px;color:var(--dim);text-align:right;font-variant-numeric:tabular-nums}
-.drop .sl input{display:block;width:100%;height:30px;accent-color:#b0241c;touch-action:pan-y;cursor:pointer}
+.sl{padding:7px 0 5px;border-bottom:1px dashed rgba(29,27,24,.12)}
+.sl:last-child{border-bottom:0}
+.slh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.slh span{font-size:15px}
+.slh small{display:block;font-family:var(--serif);font-size:13px;color:var(--dim);line-height:1.2}
+.slh output{font-size:14px;color:var(--dim);font-variant-numeric:tabular-nums;cursor:pointer;padding:2px 8px;border-radius:99px;border:1px solid transparent;white-space:nowrap}
+.slh output.chg{color:var(--red);border-color:rgba(176,36,28,.35)}
+.slc{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:8px;margin-top:2px}
+.slc button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--ink-2);font-size:22px;line-height:1;color:var(--bone)}
+.slc button:active{background:var(--ink-3);transform:scale(.94)}
+.drop .slc input{display:block;width:100%;height:34px;accent-color:#b0241c;touch-action:pan-y;cursor:pointer}
+.tbtns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.tb{padding:10px 14px;border-radius:99px;border:1px solid var(--line);background:var(--ink-2);font-size:14px;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+.tb.on{background:var(--bone);color:var(--ink)}
+.mgrid{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .35s;
+  background:linear-gradient(90deg,transparent calc(33.33% - .5px),rgba(255,255,255,.75) calc(33.33% - .5px) calc(33.33% + .5px),transparent 0,transparent calc(66.66% - .5px),rgba(255,255,255,.75) calc(66.66% - .5px) calc(66.66% + .5px),transparent 0),
+  linear-gradient(0deg,transparent calc(33.33% - .5px),rgba(255,255,255,.75) calc(33.33% - .5px) calc(33.33% + .5px),transparent 0,transparent calc(66.66% - .5px),rgba(255,255,255,.75) calc(66.66% - .5px) calc(66.66% + .5px),transparent 0),
+  repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 1px,transparent 1px 8.333%),repeating-linear-gradient(0deg,rgba(255,255,255,.22) 0 1px,transparent 1px 8.333%);
+  outline:1px solid rgba(255,255,255,.6);mix-blend-mode:difference}
+.mgrid.on{opacity:1}
+.hdl.hdl--m{width:26px;height:26px;margin:-13px 0 0 -13px;background:#fff;border:3px solid #b0241c}
+#retouchOld{margin:0 0 14px}
 #tuneReset{margin:10px 0 8px;padding:11px;font-size:14px}
 
 /* overlay */
@@ -155,9 +175,12 @@ h1::after{content:"";display:block;width:min(260px,70%);height:12px;margin-top:4
 /* sul computer: testi grandi il doppio */
 @media (min-width:900px){
 .tg{font-size:20px}
-.sl{grid-template-columns:170px 1fr 90px}
-.sl span{font-size:26px}
-.sl output{font-size:24px}
+.slh span{font-size:26px}
+.slh small{font-size:22px}
+.slh output{font-size:24px}
+.tb{font-size:24px}
+.slc{grid-template-columns:56px 1fr 56px}
+.slc button{width:56px;height:56px;font-size:30px}
 .tune h3{font-size:56px}
 .mockCap{font-size:40px}
 #tuneReset{font-size:26px}
@@ -236,6 +259,7 @@ header{flex-wrap:wrap}
     <h1>Anticamera</h1>
     <div id="pwBox">
       <p class="lead">Di qui si entra nello studio di sunshyray. Scrivi la password.</p>
+      <input type="text" name="username" autocomplete="username" value="sunshyray" hidden aria-hidden="true">
       <div class="field"><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" enterkeyhint="go"></div>
       <p class="err" id="loginErr"></p>
       <button class="go" id="loginBtn">Entra</button>
@@ -245,7 +269,7 @@ header{flex-wrap:wrap}
       <p class="lead">Si fa <b>una volta sola</b>: incolla la chiave di GitHub e scegli una password. Da quel momento, da qualsiasi telefono, per entrare basta la password.</p>
       <div class="field"><label for="tok">Chiave di GitHub</label><input id="tok" type="password" autocomplete="off" placeholder="github_pat_..."></div>
       <div class="field" id="repoField" hidden><label for="repo">Repository <small>(utente/nome-repo)</small></label><input id="repo" placeholder="utente/sunshyray"></div>
-      <div class="field"><label for="np1">Scegli la password <small>(almeno 8 caratteri)</small></label><input id="np1" type="password" autocomplete="new-password"></div>
+      <div class="field"><label for="np1">Scegli la password <small>(almeno 10 caratteri)</small></label><input id="np1" type="password" autocomplete="new-password"></div>
       <div class="field"><label for="np2">Riscrivila</label><input id="np2" type="password" autocomplete="new-password"></div>
       <p class="note">Meglio una piccola frase facile da ricordare per voi, ma non per gli altri (es. <b>spirale rossa di marzo</b>).</p>
       <p class="err" id="setupErr"></p>
@@ -278,12 +302,18 @@ header{flex-wrap:wrap}
           <p class="tip">Consiglio: mettiti <b>di fronte</b> al quadro, lascia <b>un po' di muro intorno</b>, buona luce e niente flash. Gli angoli li trovo io.</p>
         </div>
         <div id="dropFull" hidden>
-          <div class="mock"><span class="cv" id="mCv"><img id="preview" alt=""><i class="weave"></i></span></div>
+          <button type="button" class="ghost" id="retouchOld" hidden>✎ Ritocca questa foto</button>
+          <div class="mock"><span class="cv" id="mCv"><img id="preview" alt=""><i class="weave"></i><i class="mgrid" id="mGrid"></i></span></div>
           <p class="mockCap">così apparirà sul sito</p>
           <div class="tune" id="tune" hidden>
             <h3>Ritocchi</h3>
+            <div class="tbtns">
+              <button type="button" class="tb" id="tuneAuto">✨ Luce automatica</button>
+              <button type="button" class="tb" id="tuneBefore">👁 Tieni premuto: com'era</button>
+              <button type="button" class="tb" id="tuneGrid">▦ Griglia</button>
+            </div>
             <div id="tuneRows"></div>
-            <button type="button" class="ghost" id="tuneReset">Azzera i ritocchi</button>
+            <button type="button" class="ghost" id="tuneReset">Azzera tutti i ritocchi</button>
           </div>
           <div class="picks">
             <label class="pick pick--cam"><input type="file" id="fileCam2" accept="image/*" capture="environment">📷 Rifai la foto</label>
@@ -303,6 +333,10 @@ header{flex-wrap:wrap}
           <button type="button" class="hdl" data-k="1" aria-label="angolo in alto a destra"></button>
           <button type="button" class="hdl" data-k="2" aria-label="angolo in basso a destra"></button>
           <button type="button" class="hdl" data-k="3" aria-label="angolo in basso a sinistra"></button>
+          <button type="button" class="hdl hdl--m" data-s="0" aria-label="lato sopra"></button>
+          <button type="button" class="hdl hdl--m" data-s="1" aria-label="lato destro"></button>
+          <button type="button" class="hdl hdl--m" data-s="2" aria-label="lato sotto"></button>
+          <button type="button" class="hdl hdl--m" data-s="3" aria-label="lato sinistro"></button>
           <canvas class="loupe" id="loupe" width="240" height="240" hidden></canvas>
         </div></div>
         <div class="row">
@@ -387,7 +421,7 @@ header{flex-wrap:wrap}
 
       <h2 class="h2s">Cambia password</h2>
       <p class="note">La nuova password vale subito su tutti i telefoni. Chi è già entrato resta dentro finché non preme “esci”.</p>
-      <div class="field"><label for="cp1">Nuova password <small>(almeno 8 caratteri)</small></label><input id="cp1" type="password" autocomplete="new-password"></div>
+      <div class="field"><label for="cp1">Nuova password <small>(almeno 10 caratteri)</small></label><input id="cp1" type="password" autocomplete="new-password"></div>
       <div class="field"><label for="cp2">Riscrivila</label><input id="cp2" type="password" autocomplete="new-password"></div>
       <button class="ghost" id="chPw">Cambia password</button>
     </div>

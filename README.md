@@ -23,12 +23,16 @@ Sito portfolio e vetrina dei dipinti di **sunshyray**. È un sito statico ospita
 3. Apri `https://<utente>.github.io/<repo>/studio/`, incolla la chiave e **scegli una password**. Va fatto una volta sola.
 4. Da quel momento, da qualsiasi telefono, per entrare nello studio basta la password. Sul telefono di lei: apri lo studio, poi "Condividi → Aggiungi a Home", così diventa come un'app.
 
-## Lo studio è solo per lei
+## Lo studio è solo per lei (sicurezza)
 
 - Il sito pubblico non ha nessun link allo studio e nessun segno che esista.
 - Chi apre `/studio/` vede solo l'anticamera, con la richiesta della password.
-- Porta nascosta: sul sito, 5 tocchi veloci sul logo "sunshyray" aprono lo studio.
-- La password si cambia dallo studio, nella scheda *Bio*.
+- La password si cambia dallo studio, nella scheda *Bio* (minimo 10 caratteri).
+- La chiave di GitHub è salvata nel repo solo **cifrata** con la password (PBKDF2-SHA256 con 1.000.000 di passaggi + AES-256-GCM): senza password è illeggibile.
+- La chiave ha il minimo indispensabile: un solo repo, solo "Contents". Se qualcosa va storto si revoca da GitHub e se ne crea un'altra.
+- Dopo l'ingresso il telefono resta dentro 14 giorni, poi richiede la password. "Esci" chiude subito.
+- Il sito e lo studio hanno una Content Security Policy severa: possono caricare solo i propri file, i font di Google e (lo studio) parlare con GitHub. Lo studio non si apre dentro pagine altrui.
+- Il codice del repo è pubblico (serve per GitHub Pages gratuito): la sicurezza non dipende dal nasconderlo, ma dalla password e dalla cifratura.
 - Quando la chiave di GitHub scade: nell'anticamera tocca "Prima volta, o password dimenticata?", incolla una chiave nuova e scegli la password.
 
 ## Come si usa lo studio

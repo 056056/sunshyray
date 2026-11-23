@@ -161,7 +161,23 @@
     try {
       const get = f => fetch(f + v).then(r => r.ok ? r.json() : null).catch(() => null);
       const [a, b, c] = await Promise.all([get('data/opere.json'), get('data/sito.json'), get('data/quaderno.json')]);
-      works = Array.isArray(a) ? a : []; site = b || {}; notes = Array.isArray(c) ? c : [];
+      // accetto solo dati ben formati: foto nelle cartelle del sito, misure numeriche, testi
+      const okPath = p => typeof p === 'string' && /^(opere|quaderno)\/[\w.-]+\.(jpe?g|png|webp)$/i.test(p);
+      const clean = it => {
+        if (!it || typeof it !== 'object' || !okPath(it.img)) return null;
+        const o = {};
+        for (const [k, v] of Object.entries(it)) if (typeof v === 'string') o[k] = v.slice(0, 4000);
+        o.thumb = okPath(it.thumb) ? it.thumb : it.img;
+        o.w = Math.max(0, Math.round(+it.w) || 0); o.h = Math.max(0, Math.round(+it.h) || 0);
+        return o;
+      };
+      works = (Array.isArray(a) ? a : []).map(clean).filter(Boolean);
+      notes = (Array.isArray(c) ? c : []).map(clean).filter(Boolean);
+      site = {};
+      if (b && typeof b === 'object') for (const [k, v] of Object.entries(b)) if (typeof v === 'string') site[k] = v.slice(0, 6000);
+      site.instagram = (site.instagram || '').replace(/[^\w.]/g, '');
+      site.whatsapp = (site.whatsapp || '').replace(/\D/g, '');
+      if (site.email && !/^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(site.email)) site.email = '';
     } catch (e) { console.warn('dati non caricati', e); }
   }
 
@@ -365,11 +381,6 @@
 
   /* ---------------- avvio ---------------- */
   $('#year').textContent = new Date().getFullYear();
-  let taps = [];
-  $('.sig').addEventListener('click', () => {
-    const now = Date.now(); taps = taps.filter(x => now - x < 2500).concat(now);
-    if (taps.length >= 5) location.href = 'studio/';
-  });
   load().then(() => {
     applyLang(true);
     const i = works.findIndex(w => w.id === decodeURIComponent(location.hash.slice(1)));

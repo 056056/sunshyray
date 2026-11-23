@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  // lo studio non si apre dentro pagine altrui (protezione dal "clickjacking")
+  if (window.top !== window.self) { document.body.innerHTML = ''; try { window.top.location = window.self.location.href; } catch (e) {} return; }
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
 
@@ -27,7 +29,11 @@
     return '';
   }
   let REPO = detectRepo();
+  // dopo l'ingresso con la password il telefono resta dentro per 14 giorni, poi la richiede
+  const SESSION_DAYS = 14;
+  if (+store.get('ss_exp') < Date.now()) { store.del('ss_token'); store.del('ss_exp'); }
   let TOKEN = store.get('ss_token');
+  const remember = () => { store.set('ss_token', TOKEN); store.set('ss_exp', String(Date.now() + SESSION_DAYS * 864e5)); };
 
   /* ---------- GitHub ---------- */
   async function api(path, opts = {}) {
@@ -88,7 +94,7 @@
     return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
   }
   async function lock(token, pw) {
-    const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), iter = 600000;
+    const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), iter = 1000000;
     const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await derive(pw, salt, iter), te.encode(token)));
     return { v: 1, iter, salt: toB64(salt), iv: toB64(iv), data: toB64(ct) };
   }
@@ -111,7 +117,7 @@
     await putJSON(KEYFILE, box, 'Password dello studio', sha);
     return box;
   }
-  const pwProblem = (a, b) => a.length < 8 ? 'La password deve avere almeno 8 caratteri.' : a !== b ? 'Le due password non sono uguali.' : '';
+  const pwProblem = (a, b) => a.length < 10 ? 'La password deve avere almeno 10 caratteri.' : a !== b ? 'Le due password non sono uguali.' : '';
 
   async function tryLogin() {
     const r = await api('');
@@ -125,7 +131,7 @@
     if (!REPO) $('#repoField').hidden = false;
     if (TOKEN && REPO) {
       try { busy('Apro lo studio…'); await tryLogin(); idle(); showApp(); return; }
-      catch (e) { idle(); TOKEN = ''; store.del('ss_token'); }
+      catch (e) { idle(); TOKEN = ''; store.del('ss_token'); store.del('ss_exp'); }
     }
     $('#login').hidden = false;
     box = REPO ? await fetchBox() : null;
@@ -142,7 +148,7 @@
     catch (e) { idle(); $('#loginErr').textContent = 'Password sbagliata. Riprova.'; $('#pw').select(); return; }
     try {
       await tryLogin();
-      store.set('ss_token', TOKEN); store.set('ss_repo', REPO);
+      remember(); store.set('ss_repo', REPO);
       idle(); $('#login').hidden = true; $('#pw').value = ''; showApp();
     } catch (e) {
       idle(); TOKEN = '';
@@ -168,13 +174,13 @@
     }
     try {
       busy('Salvo la password…'); box = await saveBox(p1);
-      store.set('ss_token', TOKEN); store.set('ss_repo', REPO);
+      remember(); store.set('ss_repo', REPO);
       ['#tok', '#np1', '#np2'].forEach(s => $(s).value = '');
       $('#login').hidden = true; showApp();
       done('Fatto!', 'Da ora, su qualsiasi telefono, per entrare nello studio basta la password.');
     } catch (e) { fail(e); }
   };
-  $('#logout').onclick = () => { if (confirm('Vuoi uscire? Per rientrare ti servirà la password.')) { store.del('ss_token'); location.reload(); } };
+  $('#logout').onclick = () => { if (confirm('Vuoi uscire? Per rientrare ti servirà la password.')) { store.del('ss_token'); store.del('ss_exp'); location.reload(); } };
   function showApp() { $('#app').hidden = false; $('#logout').hidden = false; loadList(); loadNotes(); loadBio(); }
 
   /* ---------- schede ---------- */
@@ -357,7 +363,8 @@
   const stage = $('#stage');
   const defaultCorners = () => [{ x: .06, y: .06 }, { x: .94, y: .06 }, { x: .94, y: .94 }, { x: .06, y: .94 }];
   function drawCrop() {
-    $$('.hdl').forEach((h, k) => { h.style.left = (corners[k].x * 100) + '%'; h.style.top = (corners[k].y * 100) + '%'; });
+    $$('.hdl:not(.hdl--m)').forEach((h, k) => { h.style.left = (corners[k].x * 100) + '%'; h.style.top = (corners[k].y * 100) + '%'; });
+    $$('.hdl--m').forEach(h => { const [a, b] = SIDES[+h.dataset.s]; h.style.left = ((corners[a].x + corners[b].x) * 50) + '%'; h.style.top = ((corners[a].y + corners[b].y) * 50) + '%'; });
     const pts = corners.map(p => `${p.x},${p.y}`).join(' ');
     $('#cropPoly').setAttribute('points', pts);
     $('#cropShade').setAttribute('d', `M0 0H1V1H0Z M${corners.map(p => `${p.x} ${p.y}`).join(' L')}Z`);
@@ -376,7 +383,7 @@
     loupe.style.top = (up ? ev.clientY - 150 : ev.clientY + 40) + 'px';
     loupe.hidden = false;
   }
-  $$('.hdl').forEach(h => {
+  $$('.hdl:not(.hdl--m)').forEach(h => {
     h.addEventListener('pointerdown', e => {
       e.preventDefault(); h.setPointerCapture(e.pointerId);
       const k = +h.dataset.k;
@@ -390,6 +397,23 @@
       h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
     });
   });
+  // maniglie a metà dei lati: spostano un lato intero
+  const SIDES = [[0, 1], [1, 2], [2, 3], [3, 0]];
+  $$('.hdl--m').forEach(h => {
+    h.addEventListener('pointerdown', e => {
+      e.preventDefault(); h.setPointerCapture(e.pointerId);
+      const [a, b] = SIDES[+h.dataset.s], r0 = stage.getBoundingClientRect();
+      const start = { x: e.clientX, y: e.clientY }, A0 = { ...corners[a] }, B0 = { ...corners[b] };
+      const cl = v => Math.min(1, Math.max(0, v));
+      const move = ev => {
+        const dx = (ev.clientX - start.x) / r0.width, dy = (ev.clientY - start.y) / r0.height;
+        corners[a] = { x: cl(A0.x + dx), y: cl(A0.y + dy) }; corners[b] = { x: cl(B0.x + dx), y: cl(B0.y + dy) };
+        drawCrop();
+      };
+      const up = () => { h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up); };
+      h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
+    });
+  });
   let found = null;
   function openCrop(keep) {
     if (!keep || !corners) {
@@ -398,80 +422,144 @@
     }
     const tip = $('#cropTip'); tip.classList.toggle('found', !!found);
     tip.innerHTML = found
-      ? '<b>Ho trovato il quadro ✓</b> Controlla che i 4 pallini siano proprio sugli angoli della tela (tenendoli premuti li vedi da vicino), poi premi <b>Raddrizza</b>.'
-      : '<b>Trascina i 4 pallini rossi sugli angoli del quadro.</b> Tenendoli premuti li vedi da vicino. Così la foto diventa dritta, senza muro intorno, e si appoggia bene sulla tela.';
+      ? '<b>Ho trovato il quadro ✓</b> Controlla che i 4 pallini rossi siano proprio sugli angoli della tela (tenendoli premuti li vedi da vicino). I pallini bianchi spostano un lato intero. Poi premi <b>Raddrizza</b>.'
+      : '<b>Trascina i 4 pallini rossi sugli angoli del quadro</b> (tenendoli premuti li vedi da vicino). I pallini bianchi spostano un lato intero. Così la foto diventa dritta, senza muro intorno.';
     cropC = scaled(src, 1600);
     $('#cropImg').src = cropC.toDataURL('image/jpeg', .85);
     $('#crop').hidden = false; $('#drop').hidden = true; $('#recrop').hidden = true;
     drawCrop();
     $('#crop').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-  /* ---------- ritocchi: rotazione fine, rifilo dei bordi, luce e colore ----------
-     La stessa funzione disegna l'anteprima e la foto finale: quello che si vede
-     sulla tela finta è esattamente quello che viene pubblicato. */
+  /* ---------- ritocchi ----------
+     Forma e margini cambiano i 4 angoli (poi la foto viene raddrizzata di nuovo);
+     inclinazione, luce e colore si applicano dopo. La stessa funzione disegna
+     l'anteprima e la foto finale: quello che si vede sulla tela finta è quello
+     che viene pubblicato. */
   const TUNE = [
-    ['g', 'Dritta'],
-    ['rot', 'Ruota', -5, 5, .1, '°'],
-    ['g', 'Rifila i bordi'],
-    ['top', 'Sopra', 0, 12, .2, '%'], ['bottom', 'Sotto', 0, 12, .2, '%'],
-    ['left', 'Sinistra', 0, 12, .2, '%'], ['right', 'Destra', 0, 12, .2, '%'],
-    ['g', 'Luce e colore'],
-    ['light', 'Luce', -40, 40, 1, ''], ['contrast', 'Contrasto', -40, 40, 1, ''], ['warm', 'Calore', -30, 30, 1, '']
+    ['g', 'Forma'],
+    ['rot', 'Inclinazione', -10, 10, .1, '°', 'gira la foto per raddrizzarla'],
+    ['kv', 'Prospettiva alto / basso', -15, 15, .5, '', 'se la tela sembra più stretta sopra o sotto'],
+    ['kh', 'Prospettiva sinistra / destra', -15, 15, .5, '', 'se un lato sembra più corto dell\'altro'],
+    ['g', 'Margini  ( − allarga · + stringe )'],
+    ['top', 'Sopra', -6, 15, .2, '%'], ['bottom', 'Sotto', -6, 15, .2, '%'],
+    ['left', 'Sinistra', -6, 15, .2, '%'], ['right', 'Destra', -6, 15, .2, '%'],
+    ['g', 'Colore'],
+    ['light', 'Luce', -50, 50, 1, ''], ['contrast', 'Contrasto', -50, 60, 1, ''],
+    ['sat', 'Saturazione', -60, 60, 1, '', 'colori più vivi o più spenti'],
+    ['warm', 'Calore', -40, 40, 1, '', '− più freddo · + più caldo'],
+    ['sharp', 'Nitidezza', 0, 100, 1, '', 'dettagli e pennellate più definiti']
   ];
-  const T0 = { rot: 0, top: 0, bottom: 0, left: 0, right: 0, light: 0, contrast: 0, warm: 0 };
-  let T = { ...T0 }, base = null, tuneRaf = 0;
-  $('#tuneRows').innerHTML = TUNE.map(r => r[0] === 'g' ? `<p class="tg">${r[1]}</p>` :
-    `<label class="sl"><span>${r[1]}</span><input type="range" data-k="${r[0]}" min="${r[2]}" max="${r[3]}" step="${r[4]}" value="0"><output data-o="${r[0]}">0${r[5]}</output></label>`).join('');
-  const fmt = (k, v) => { const r = TUNE.find(x => x[0] === k); return (v > 0 && r[2] < 0 ? '+' : '') + (+v).toFixed(r[4] < 1 ? 1 : 0).replace('.0', '') + r[5]; };
-  function syncTune() { $$('#tuneRows input').forEach(i => { i.value = T[i.dataset.k]; $(`output[data-o="${i.dataset.k}"]`).textContent = fmt(i.dataset.k, T[i.dataset.k]); }); }
-  $('#tuneRows').addEventListener('input', e => {
-    const k = e.target.dataset.k; if (!k) return;
-    T[k] = +e.target.value; $(`output[data-o="${k}"]`).textContent = fmt(k, T[k]);
+  const GEO = ['kv', 'kh', 'top', 'bottom', 'left', 'right'];
+  const T0 = Object.fromEntries(TUNE.filter(r => r[0] !== 'g').map(r => [r[0], 0]));
+  let T = { ...T0 }, base = null, tuneRaf = 0, geoDirty = false, gridLock = false, gridTimer = 0;
+  $('#tuneRows').innerHTML = TUNE.map(r => r[0] === 'g' ? `<p class="tg">${r[1]}</p>` : `
+    <div class="sl" data-k="${r[0]}">
+      <div class="slh"><span>${r[1]}${r[6] ? `<small>${r[6]}</small>` : ''}</span><output data-o="${r[0]}" title="tocca per azzerare">0${r[5]}</output></div>
+      <div class="slc"><button type="button" data-d="-1" aria-label="meno">−</button><input type="range" data-k="${r[0]}" min="${r[2]}" max="${r[3]}" step="${r[4]}" value="0" aria-label="${r[1]}"><button type="button" data-d="1" aria-label="più">+</button></div>
+    </div>`).join('');
+  const rowOf = k => TUNE.find(x => x[0] === k);
+  const fmt = (k, v) => { const r = rowOf(k); return (v > 0 && r[2] < 0 ? '+' : '') + (+v).toFixed(r[4] < 1 ? 1 : 0).replace(/\.0$/, '') + r[5]; };
+  function showVal(k) { const o = $(`output[data-o="${k}"]`); o.textContent = fmt(k, T[k]); o.classList.toggle('chg', T[k] !== 0); }
+  function syncTune() { $$('#tuneRows input').forEach(i => { i.value = T[i.dataset.k]; showVal(i.dataset.k); }); }
+  function flashGrid() { const g = $('#mGrid'); g.classList.add('on'); clearTimeout(gridTimer); if (!gridLock) gridTimer = setTimeout(() => g.classList.remove('on'), 1400); }
+  function setT(k, v) {
+    const r = rowOf(k); v = Math.min(r[3], Math.max(r[2], Math.round(v / r[4]) * r[4]));
+    T[k] = +v.toFixed(2); showVal(k); $(`#tuneRows input[data-k="${k}"]`).value = T[k];
+    if (GEO.includes(k)) geoDirty = true;
+    if (GEO.includes(k) || k === 'rot') flashGrid();
     cancelAnimationFrame(tuneRaf); tuneRaf = requestAnimationFrame(refreshMock);
+  }
+  $('#tuneRows').addEventListener('input', e => { const k = e.target.dataset.k; if (k) setT(k, +e.target.value); });
+  $('#tuneRows').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-d]'), out = e.target.closest('output[data-o]');
+    if (btn) { const k = btn.closest('.sl').dataset.k; setT(k, T[k] + rowOf(k)[4] * +btn.dataset.d); }
+    if (out) setT(out.dataset.o, 0);
   });
-  $('#tuneReset').onclick = () => { T = { ...T0 }; syncTune(); refreshMock(); };
+  $('#tuneReset').onclick = () => { const geo = GEO.some(k => T[k]); T = { ...T0 }; syncTune(); if (geo) geoDirty = true; refreshMock(); };
+  $('#tuneGrid').onclick = () => { gridLock = !gridLock; $('#tuneGrid').classList.toggle('on', gridLock); $('#mGrid').classList.toggle('on', gridLock); };
+  // "com'era": tenendo premuto si vede la foto senza ritocchi
+  const before = on => { if (!base) return; $('#preview').src = on ? (base.__plain || (base.__plain = base.toDataURL('image/jpeg', .85))) : lastUrl; };
+  let lastUrl = '';
+  ['pointerdown'].forEach(ev => $('#tuneBefore').addEventListener(ev, e => { e.preventDefault(); $('#tuneBefore').classList.add('on'); before(true); }));
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('#tuneBefore').addEventListener(ev, () => { if ($('#tuneBefore').classList.contains('on')) { $('#tuneBefore').classList.remove('on'); before(false); } }));
+  $('#tuneBefore').addEventListener('contextmenu', e => e.preventDefault());
+  // luce automatica: porta i toni più scuri e più chiari quasi al nero e al bianco
+  $('#tuneAuto').onclick = () => {
+    if (!base) return;
+    const c = scaled(base, 300), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, h = new Uint32Array(256); let n = 0;
+    for (let i = 0; i < d.length; i += 4) { h[Math.round(.299 * d[i] + .587 * d[i + 1] + .114 * d[i + 2])]++; n++; }
+    const pct = q => { let a = 0; for (let v = 0; v < 256; v++) { a += h[v]; if (a >= n * q) return v; } return 255; };
+    const lo = pct(.01), hi = Math.max(pct(.99), lo + 20);
+    const bf = 256 / (lo + hi), cf = 235 / ((hi - lo) * bf);
+    setT('light', (bf - 1) * 100); setT('contrast', (cf - 1) * 100);
+  };
 
-  function render(img, p, ratio) {
-    const W = img.width, H = img.height, l = p.left / 100, r = p.right / 100, t = p.top / 100, b = p.bottom / 100;
-    const cw = W * (1 - l - r), ch = H * (1 - t - b);
-    let ow = cw, oh = ch;
-    if (ratio > 0) { ow = Math.sqrt(cw * ch * ratio); oh = ow / ratio; }   // proporzioni vere della tela
-    ow = Math.max(1, Math.round(ow)); oh = Math.max(1, Math.round(oh));
+  // angoli effettivi = angoli scelti + margini + prospettiva
+  function effCorners(p) {
+    const q = (corners || [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }]).map(c => [c.x, c.y]);
+    const lerp = (P, Q, t) => [(Q[0] - P[0]) * t, (Q[1] - P[1]) * t];
+    const add = (P, ...vs) => vs.reduce((a, v) => [a[0] + v[0], a[1] + v[1]], P);
+    const t = p.top / 100, b = p.bottom / 100, l = p.left / 100, r = p.right / 100, kv = p.kv / 200, kh = p.kh / 200;
+    const [q0, q1, q2, q3] = q;
+    const P = [
+      add(q0, lerp(q0, q3, t), lerp(q0, q1, l), lerp(q0, q1, kv), lerp(q0, q3, kh)),
+      add(q1, lerp(q1, q2, t), lerp(q1, q0, r), lerp(q1, q0, kv), lerp(q1, q2, -kh)),
+      add(q2, lerp(q2, q1, b), lerp(q2, q3, r), lerp(q2, q3, -kv), lerp(q2, q1, kh)),
+      add(q3, lerp(q3, q0, b), lerp(q3, q2, l), lerp(q3, q2, -kv), lerp(q3, q0, -kh))
+    ];
+    return P.map(([x, y]) => ({ x, y }));
+  }
+  const ratioNow = () => corners ? parseDims($('#f-dim').value) : 0;
+  function render(img, p) {
+    const W = img.width, H = img.height;
     const th = p.rot * Math.PI / 180, co = Math.abs(Math.cos(th)), si = Math.abs(Math.sin(th));
-    const zoom = Math.max((cw * co + ch * si) / cw, (cw * si + ch * co) / ch);   // niente angoli vuoti dopo la rotazione
-    const out = document.createElement('canvas'); out.width = ow; out.height = oh;
+    const zoom = Math.max(co + si * H / W, co + si * W / H);   // niente angoli vuoti dopo l'inclinazione
+    const out = document.createElement('canvas'); out.width = W; out.height = H;
     const x = out.getContext('2d'); x.imageSmoothingQuality = 'high';
-    x.translate(ow / 2, oh / 2); x.scale(ow / cw, oh / ch); x.rotate(th); x.scale(zoom, zoom);
-    x.drawImage(img, -(W * l + cw / 2), -(H * t + ch / 2));
-    if (p.light || p.contrast || p.warm) {
-      const id = x.getImageData(0, 0, ow, oh), d = id.data, bf = 1 + p.light / 100, cf = 1 + p.contrast / 100, wk = p.warm * .8;
+    x.translate(W / 2, H / 2); x.rotate(th); x.scale(zoom, zoom); x.drawImage(img, -W / 2, -H / 2);
+    if (p.light || p.contrast || p.warm || p.sat || p.sharp) {
+      x.setTransform(1, 0, 0, 1, 0, 0);
+      const id = x.getImageData(0, 0, W, H), d = id.data, bf = 1 + p.light / 100, cf = 1 + p.contrast / 100, wk = p.warm * .8, sf = 1 + p.sat / 100;
       for (let i = 0; i < d.length; i += 4) {
-        d[i] = (d[i] * bf - 128) * cf + 128 + wk;
-        d[i + 1] = (d[i + 1] * bf - 128) * cf + 128 + wk * .25;
-        d[i + 2] = (d[i + 2] * bf - 128) * cf + 128 - wk;
+        let r = (d[i] * bf - 128) * cf + 128 + wk, g = (d[i + 1] * bf - 128) * cf + 128 + wk * .25, b = (d[i + 2] * bf - 128) * cf + 128 - wk;
+        if (sf !== 1) { const y = .299 * r + .587 * g + .114 * b; r = y + (r - y) * sf; g = y + (g - y) * sf; b = y + (b - y) * sf; }
+        d[i] = r; d[i + 1] = g; d[i + 2] = b;
+      }
+      if (p.sharp) { // maschera di contrasto 3x3, proporzionata alla grandezza della foto
+        const amt = p.sharp / 100 * 1.4, src2 = new Uint8ClampedArray(d), w4 = W * 4;
+        for (let yy = 1; yy < H - 1; yy++) for (let xx = 1; xx < W - 1; xx++) {
+          const i = yy * w4 + xx * 4;
+          for (let k = 0; k < 3; k++) {
+            const j = i + k, blur = (src2[j - 4] + src2[j + 4] + src2[j - w4] + src2[j + w4] + src2[j - w4 - 4] + src2[j - w4 + 4] + src2[j + w4 - 4] + src2[j + w4 + 4] + src2[j]) / 9;
+            d[j] = src2[j] + (src2[j] - blur) * amt;
+          }
+        }
       }
       x.putImageData(id, 0, 0);
     }
     return out;
   }
+  function makeBase() { base = warp(src, effCorners(T), 1000, ratioNow()); geoDirty = false; }
   function refreshMock() {
-    if (!base) return;
-    const url = render(base, T, parseDims($('#f-dim').value)).toDataURL('image/jpeg', .85);
-    $('#preview').src = url; $('#mCv').style.setProperty('--img', `url("${url}")`);
+    if (!src) return;
+    if (geoDirty || !base) makeBase();
+    lastUrl = render(base, T).toDataURL('image/jpeg', .85);
+    $('#preview').src = lastUrl; $('#mCv').style.setProperty('--img', `url("${lastUrl}")`);
   }
-  function makeBase() { base = corners ? warp(src, corners, 1000, parseDims($('#f-dim').value)) : scaled(src, 1000); }
-  $('#f-dim').addEventListener('change', () => { if (base && src) { makeBase(); refreshMock(); } });
+  $('#f-dim').addEventListener('change', () => { if (src) { geoDirty = true; refreshMock(); } });
+  // foto finale, alla massima qualità, con gli stessi ritocchi
+  const finalImage = () => render(warp(src, effCorners(T), 2200, ratioNow()), T);
 
   async function showPreview() {
-    makeBase(); refreshMock(); syncTune();
-    $('#tune').hidden = false;
+    geoDirty = true; refreshMock(); syncTune();
+    $('#tune').hidden = false; $('#retouchOld').hidden = true;
     $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
-    $('#crop').hidden = true; $('#drop').hidden = false; $('#recrop').hidden = false;
+    $('#crop').hidden = true; $('#drop').hidden = false; $('#recrop').hidden = !corners && !src;
     photoReady = true;
     $('#drop').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   $('#cropOk').onclick = async () => { busy('Raddrizzo la foto…'); await new Promise(r => setTimeout(r, 30)); try { await showPreview(); idle(); } catch (e) { fail(e); } };
-  $('#cropSkip').onclick = async () => { corners = null; await showPreview(); };
+  $('#cropSkip').onclick = async () => { corners = null; busy('Preparo la foto…'); await new Promise(r => setTimeout(r, 30)); await showPreview(); idle(); };
   $('#recrop').onclick = () => openCrop(true);
 
   async function handleFile(file) {
@@ -489,7 +577,7 @@
     return o;
   }
   function resetForm() {
-    editing = null; src = null; corners = null; photoReady = false; base = null; T = { ...T0 }; $('#tune').hidden = true; $('#mCv').style.removeProperty('--img');
+    editing = null; src = null; corners = null; photoReady = false; base = null; T = { ...T0 }; $('#tune').hidden = true; $('#retouchOld').hidden = true; $('#mCv').style.removeProperty('--img');
     for (const k in F) $(F[k]).value = '';
     $('input[name=stato][value=disponibile]').checked = true;
     $('#dropEmpty').hidden = false; $('#dropFull').hidden = true; $('#drop').hidden = false;
@@ -511,8 +599,7 @@
       if (photoReady && src) {
         busy('Preparo la foto…', 'Non chiudere la pagina');
         await new Promise(r => setTimeout(r, 30));
-        const ratio = parseDims(data.dimensioni);
-        const full = render(corners ? warp(src, corners, 2200, ratio) : scaled(src, 2200), T, ratio);
+        const full = finalImage();
         const thumbC = scaled(full, 900);
         const v = editing ? '-' + Date.now().toString(36) : '';
         const fp = `opere/${id}${v}.jpg`, tp = `opere/${id}${v}-s.jpg`;
@@ -540,7 +627,8 @@
   /* ---------- elenchi ---------- */
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const rawUrl = p => `https://raw.githubusercontent.com/${REPO}/HEAD/${p}`;
-  const thumbImg = it => `<img src="${esc(rawUrl(it.thumb || it.img))}" alt="" loading="lazy" onerror="this.onerror=null;this.src='../${esc(it.thumb || it.img)}'">`;
+  const thumbImg = it => `<img src="${esc(rawUrl(it.thumb || it.img))}" alt="" loading="lazy" data-fb="../${esc(it.thumb || it.img)}">`;
+  document.addEventListener('error', e => { const i = e.target; if (i.tagName === 'IMG' && i.dataset.fb && i.src.indexOf(i.dataset.fb.slice(3)) < 0) { i.src = i.dataset.fb; delete i.dataset.fb; } }, true);
   const moveBtns = (i, n) => `<button data-a="up" ${i === 0 ? 'disabled style="opacity:.3"' : ''}>↑</button><button data-a="down" ${i === n - 1 ? 'disabled style="opacity:.3"' : ''}>↓</button>`;
   const swap = (l, id, dir) => { const i = l.findIndex(x => x.id === id), j = i + (dir === 'up' ? -1 : 1); if (i > -1 && j >= 0 && j < l.length) [l[i], l[j]] = [l[j], l[i]]; return l; };
 
@@ -574,8 +662,20 @@
     $('#formTitle').textContent = 'Modifica opera';
     $('#formLead').textContent = 'Cambia quello che vuoi. Se non tocchi la foto, resta quella di prima.';
     $('#publish').textContent = 'Salva modifiche'; $('#cancelEdit').hidden = false;
+    $('#retouchOld').hidden = false; $('#retouchOld').dataset.img = w.img;
     tab('new');
   }
+  $('#retouchOld').onclick = async () => {
+    const p = $('#retouchOld').dataset.img;
+    try {
+      busy('Apro la foto…');
+      let r = await fetch('../' + p, { cache: 'no-store' }).catch(() => null);
+      if (!r || !r.ok) r = await fetch(rawUrl(p), { cache: 'no-store' });
+      if (!r.ok) throw new Error('image');
+      src = await decode(await r.blob()); corners = null; T = { ...T0 };
+      await showPreview(); idle();
+    } catch (e) { fail(new Error('image')); }
+  };
   $('#list').addEventListener('click', async e => {
     const b = e.target.closest('button[data-a]'); if (!b) return;
     const w = works[+b.closest('.item').dataset.i], a = b.dataset.a;
