@@ -491,7 +491,8 @@
     const pct = q => { let a = 0; for (let v = 0; v < 256; v++) { a += h[v]; if (a >= n * q) return v; } return 255; };
     const lo = pct(.01), hi = Math.max(pct(.99), lo + 20);
     const bf = 256 / (lo + hi), cf = 235 / ((hi - lo) * bf);
-    setT('light', (bf - 1) * 100); setT('contrast', (cf - 1) * 100);
+    // delicata: corregge la foto del telefono senza snaturare un quadro volutamente scuro o chiaro
+    setT('light', Math.max(-20, Math.min(20, (bf - 1) * 60))); setT('contrast', Math.max(-15, Math.min(25, (cf - 1) * 70)));
   };
 
   // angoli effettivi = angoli scelti + margini + prospettiva
