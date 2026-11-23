@@ -107,6 +107,24 @@ h1::after{content:"";display:block;width:min(260px,70%);height:12px;margin-top:4
 .loupe{position:fixed;width:120px;height:120px;border-radius:50%;border:3px solid #fff;box-shadow:0 6px 20px rgba(0,0,0,.55);pointer-events:none;z-index:60;background:#000}
 .cropTip.found b{color:var(--ok)}
 
+/* tela finta + ritocchi */
+.mock{background:#d9d2c4 url(../img/muro-sala.jpg) 0 0/600px;border-radius:6px;padding:30px 20px 44px;display:grid;place-items:center;box-shadow:inset 0 0 50px rgba(60,40,20,.14)}
+.mock .cv{--dp:9px;position:relative;display:inline-block;max-width:calc(100% - 22px);box-shadow:13px 21px 26px -8px rgba(40,28,16,.5),27px 39px 60px -20px rgba(40,28,16,.35)}
+.drop .mock .cv img{display:block;max-height:min(52svh,540px);max-width:100%;width:auto;height:auto;box-shadow:none}
+.mock .cv::before,.mock .cv::after{content:"";position:absolute;background-color:#2a2420;background-image:var(--img);background-repeat:no-repeat}
+.mock .cv::before{top:0;left:100%;width:var(--dp);height:100%;background-size:auto 100%;background-position:right center;transform:skewY(45deg);transform-origin:0 0;filter:brightness(.55) saturate(.85)}
+.mock .cv::after{top:100%;left:0;width:100%;height:var(--dp);background-size:100% auto;background-position:center bottom;transform:skewX(45deg);transform-origin:0 0;filter:brightness(.36) saturate(.8)}
+.mock .weave{position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,rgba(255,250,240,.13),transparent 38%,transparent 62%,rgba(0,0,0,.16)),repeating-linear-gradient(0deg,rgba(0,0,0,.028) 0 1px,transparent 1px 2px),repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 1px,transparent 1px 2px);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.mockCap{font-family:var(--hand);font-size:26px;color:var(--dim);margin-top:6px;text-align:center}
+.tune{margin-top:14px;text-align:left;background:var(--ink-2) url(../img/carta.jpg) 0 0/384px;border:1px solid var(--line);border-radius:16px;padding:12px 16px 6px}
+.tune h3{font-family:var(--hand);font-weight:400;font-size:34px;line-height:1}
+.tg{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:14px 0 0}
+.sl{display:grid;grid-template-columns:92px 1fr 54px;align-items:center;gap:10px;padding:4px 0}
+.sl span{font-size:14px}
+.sl output{font-size:13px;color:var(--dim);text-align:right;font-variant-numeric:tabular-nums}
+.drop .sl input{display:block;width:100%;height:30px;accent-color:#b0241c;touch-action:pan-y;cursor:pointer}
+#tuneReset{margin:10px 0 8px;padding:11px;font-size:14px}
+
 /* overlay */
 .ov{position:fixed;inset:0;z-index:50;background:rgba(242,237,227,.94);backdrop-filter:blur(6px);display:none;place-items:center;text-align:center;padding:24px}
 .ov.on{display:grid;animation:fade .4s var(--ease)}
@@ -136,6 +154,13 @@ h1::after{content:"";display:block;width:min(260px,70%);height:12px;margin-top:4
 
 /* sul computer: testi grandi il doppio */
 @media (min-width:900px){
+.tg{font-size:20px}
+.sl{grid-template-columns:170px 1fr 90px}
+.sl span{font-size:26px}
+.sl output{font-size:24px}
+.tune h3{font-size:56px}
+.mockCap{font-size:40px}
+#tuneReset{font-size:26px}
 .pick{font-size:28px}
 .drop .tip{font-size:30px;max-width:720px}
 #dropFull .pick,#nbFull .pick{font-size:24px}
@@ -252,7 +277,14 @@ header{flex-wrap:wrap}
           </div>
           <p class="tip">Consiglio: mettiti <b>di fronte</b> al quadro, lascia <b>un po' di muro intorno</b>, buona luce e niente flash. Gli angoli li trovo io.</p>
         </div>
-        <div id="dropFull" hidden><img id="preview" alt="">
+        <div id="dropFull" hidden>
+          <div class="mock"><span class="cv" id="mCv"><img id="preview" alt=""><i class="weave"></i></span></div>
+          <p class="mockCap">così apparirà sul sito</p>
+          <div class="tune" id="tune" hidden>
+            <h3>Ritocchi</h3>
+            <div id="tuneRows"></div>
+            <button type="button" class="ghost" id="tuneReset">Azzera i ritocchi</button>
+          </div>
           <div class="picks">
             <label class="pick pick--cam"><input type="file" id="fileCam2" accept="image/*" capture="environment">📷 Rifai la foto</label>
             <label class="pick"><input type="file" id="file2" accept="image/*">🖼 Un'altra dalla galleria</label>

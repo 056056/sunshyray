@@ -406,19 +406,76 @@
     drawCrop();
     $('#crop').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+  /* ---------- ritocchi: rotazione fine, rifilo dei bordi, luce e colore ----------
+     La stessa funzione disegna l'anteprima e la foto finale: quello che si vede
+     sulla tela finta è esattamente quello che viene pubblicato. */
+  const TUNE = [
+    ['g', 'Dritta'],
+    ['rot', 'Ruota', -5, 5, .1, '°'],
+    ['g', 'Rifila i bordi'],
+    ['top', 'Sopra', 0, 12, .2, '%'], ['bottom', 'Sotto', 0, 12, .2, '%'],
+    ['left', 'Sinistra', 0, 12, .2, '%'], ['right', 'Destra', 0, 12, .2, '%'],
+    ['g', 'Luce e colore'],
+    ['light', 'Luce', -40, 40, 1, ''], ['contrast', 'Contrasto', -40, 40, 1, ''], ['warm', 'Calore', -30, 30, 1, '']
+  ];
+  const T0 = { rot: 0, top: 0, bottom: 0, left: 0, right: 0, light: 0, contrast: 0, warm: 0 };
+  let T = { ...T0 }, base = null, tuneRaf = 0;
+  $('#tuneRows').innerHTML = TUNE.map(r => r[0] === 'g' ? `<p class="tg">${r[1]}</p>` :
+    `<label class="sl"><span>${r[1]}</span><input type="range" data-k="${r[0]}" min="${r[2]}" max="${r[3]}" step="${r[4]}" value="0"><output data-o="${r[0]}">0${r[5]}</output></label>`).join('');
+  const fmt = (k, v) => { const r = TUNE.find(x => x[0] === k); return (v > 0 && r[2] < 0 ? '+' : '') + (+v).toFixed(r[4] < 1 ? 1 : 0).replace('.0', '') + r[5]; };
+  function syncTune() { $$('#tuneRows input').forEach(i => { i.value = T[i.dataset.k]; $(`output[data-o="${i.dataset.k}"]`).textContent = fmt(i.dataset.k, T[i.dataset.k]); }); }
+  $('#tuneRows').addEventListener('input', e => {
+    const k = e.target.dataset.k; if (!k) return;
+    T[k] = +e.target.value; $(`output[data-o="${k}"]`).textContent = fmt(k, T[k]);
+    cancelAnimationFrame(tuneRaf); tuneRaf = requestAnimationFrame(refreshMock);
+  });
+  $('#tuneReset').onclick = () => { T = { ...T0 }; syncTune(); refreshMock(); };
+
+  function render(img, p, ratio) {
+    const W = img.width, H = img.height, l = p.left / 100, r = p.right / 100, t = p.top / 100, b = p.bottom / 100;
+    const cw = W * (1 - l - r), ch = H * (1 - t - b);
+    let ow = cw, oh = ch;
+    if (ratio > 0) { ow = Math.sqrt(cw * ch * ratio); oh = ow / ratio; }   // proporzioni vere della tela
+    ow = Math.max(1, Math.round(ow)); oh = Math.max(1, Math.round(oh));
+    const th = p.rot * Math.PI / 180, co = Math.abs(Math.cos(th)), si = Math.abs(Math.sin(th));
+    const zoom = Math.max((cw * co + ch * si) / cw, (cw * si + ch * co) / ch);   // niente angoli vuoti dopo la rotazione
+    const out = document.createElement('canvas'); out.width = ow; out.height = oh;
+    const x = out.getContext('2d'); x.imageSmoothingQuality = 'high';
+    x.translate(ow / 2, oh / 2); x.scale(ow / cw, oh / ch); x.rotate(th); x.scale(zoom, zoom);
+    x.drawImage(img, -(W * l + cw / 2), -(H * t + ch / 2));
+    if (p.light || p.contrast || p.warm) {
+      const id = x.getImageData(0, 0, ow, oh), d = id.data, bf = 1 + p.light / 100, cf = 1 + p.contrast / 100, wk = p.warm * .8;
+      for (let i = 0; i < d.length; i += 4) {
+        d[i] = (d[i] * bf - 128) * cf + 128 + wk;
+        d[i + 1] = (d[i + 1] * bf - 128) * cf + 128 + wk * .25;
+        d[i + 2] = (d[i + 2] * bf - 128) * cf + 128 - wk;
+      }
+      x.putImageData(id, 0, 0);
+    }
+    return out;
+  }
+  function refreshMock() {
+    if (!base) return;
+    const url = render(base, T, parseDims($('#f-dim').value)).toDataURL('image/jpeg', .85);
+    $('#preview').src = url; $('#mCv').style.setProperty('--img', `url("${url}")`);
+  }
+  function makeBase() { base = corners ? warp(src, corners, 1000, parseDims($('#f-dim').value)) : scaled(src, 1000); }
+  $('#f-dim').addEventListener('change', () => { if (base && src) { makeBase(); refreshMock(); } });
+
   async function showPreview() {
-    const pv = corners ? warp(src, corners, 900, parseDims($('#f-dim').value)) : scaled(src, 900);
-    $('#preview').src = pv.toDataURL('image/jpeg', .85);
+    makeBase(); refreshMock(); syncTune();
+    $('#tune').hidden = false;
     $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
     $('#crop').hidden = true; $('#drop').hidden = false; $('#recrop').hidden = false;
     photoReady = true;
+    $('#drop').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-  $('#cropOk').onclick = async () => { busy('Raddrizzo la foto…'); await new Promise(r => setTimeout(r, 30)); try { await showPreview(); idle(); $('#f-titolo').focus({ preventScroll: true }); } catch (e) { fail(e); } };
+  $('#cropOk').onclick = async () => { busy('Raddrizzo la foto…'); await new Promise(r => setTimeout(r, 30)); try { await showPreview(); idle(); } catch (e) { fail(e); } };
   $('#cropSkip').onclick = async () => { corners = null; await showPreview(); };
   $('#recrop').onclick = () => openCrop(true);
 
   async function handleFile(file) {
-    try { busy('Apro la foto…'); src = await decode(file); idle(); openCrop(false); }
+    try { busy('Apro la foto…'); src = await decode(file); T = { ...T0 }; idle(); openCrop(false); }
     catch (e) { fail(new Error('image')); }
   }
   wireDrop($('#drop'), ['#file', '#fileCam', '#file2', '#fileCam2'].map(s => $(s)), handleFile, () => $('#p-new').classList.contains('on'));
@@ -432,7 +489,7 @@
     return o;
   }
   function resetForm() {
-    editing = null; src = null; corners = null; photoReady = false;
+    editing = null; src = null; corners = null; photoReady = false; base = null; T = { ...T0 }; $('#tune').hidden = true; $('#mCv').style.removeProperty('--img');
     for (const k in F) $(F[k]).value = '';
     $('input[name=stato][value=disponibile]').checked = true;
     $('#dropEmpty').hidden = false; $('#dropFull').hidden = true; $('#drop').hidden = false;
@@ -454,7 +511,8 @@
       if (photoReady && src) {
         busy('Preparo la foto…', 'Non chiudere la pagina');
         await new Promise(r => setTimeout(r, 30));
-        const full = corners ? warp(src, corners, 2200, parseDims(data.dimensioni)) : scaled(src, 2200);
+        const ratio = parseDims(data.dimensioni);
+        const full = render(corners ? warp(src, corners, 2200, ratio) : scaled(src, 2200), T, ratio);
         const thumbC = scaled(full, 900);
         const v = editing ? '-' + Date.now().toString(36) : '';
         const fp = `opere/${id}${v}.jpg`, tp = `opere/${id}${v}-s.jpg`;
@@ -512,7 +570,7 @@
     resetForm(); editing = w.id;
     for (const k in F) $(F[k]).value = w[k] || '';
     $(`input[name=stato][value=${w.stato === 'venduta' ? 'venduta' : 'disponibile'}]`).checked = true;
-    $('#preview').src = rawUrl(w.img); $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
+    $('#preview').src = rawUrl(w.img); $('#mCv').style.setProperty('--img', `url("${rawUrl(w.thumb || w.img)}")`); $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
     $('#formTitle').textContent = 'Modifica opera';
     $('#formLead').textContent = 'Cambia quello che vuoi. Se non tocchi la foto, resta quella di prima.';
     $('#publish').textContent = 'Salva modifiche'; $('#cancelEdit').hidden = false;
