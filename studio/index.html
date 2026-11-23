@@ -8,6 +8,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://raw.githubusercontent.com; connect-src 'self' https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#f2ede3">
+<meta http-equiv="Cache-Control" content="no-cache">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -176,6 +177,12 @@ h1::after{content:"";display:block;width:min(260px,70%);height:12px;margin-top:4
   .sl{padding:5px 0 3px}
   .slh small{display:none}
 }
+
+/* finestrella con la tela, sempre in vista mentre si regola */
+.floatPrev{position:fixed;top:calc(8px + env(safe-area-inset-top));right:8px;z-index:40;width:min(44vw,240px);padding:8px 8px 4px;background:#d9d2c4 url(../img/muro-sala.jpg) 0 0/400px;border-radius:10px;box-shadow:0 10px 26px -8px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.08);text-align:center;pointer-events:none}
+.floatPrev img{display:block;width:100%;height:auto;max-height:32svh;max-height:32vh;object-fit:contain;box-shadow:5px 8px 12px -6px rgba(40,28,16,.6)}
+.floatPrev small{display:block;font-family:var(--hand);font-size:18px;color:var(--dim);line-height:1.3}
+.floatPrev[hidden]{display:none}
 
 /* overlay */
 .ov{position:fixed;inset:0;z-index:50;background:rgba(242,237,227,.94);backdrop-filter:blur(6px);display:none;place-items:center;text-align:center;padding:24px}
@@ -370,7 +377,7 @@ header{flex-wrap:wrap}
       <div class="crop" id="crop" hidden>
         <p class="cropTip" id="cropTip"><b>Trascina i 4 pallini rossi sugli angoli del quadro.</b> Così la foto diventa dritta, senza muro intorno, e si appoggia bene sulla tela.</p>
         <div class="crop__wrap"><div class="crop__stage" id="stage">
-          <canvas id="cropImg"></canvas>
+          <img id="cropImg" alt="">
           <i class="mgrid" id="cGrid"></i>
           <svg viewBox="0 0 1 1" preserveAspectRatio="none"><path id="cropShade" fill-rule="evenodd"/><polygon id="cropPoly"/></svg>
           <button type="button" class="hdl" data-k="0" aria-label="angolo in alto a sinistra"></button>
@@ -478,6 +485,8 @@ header{flex-wrap:wrap}
   </section>
 </div>
 
+<div class="floatPrev" id="floatPrev" hidden aria-hidden="true"><img id="floatImg" alt=""><small>anteprima</small></div>
+
 <div class="ov" id="ov">
   <div>
     <svg viewBox="-100 -100 200 200"><path id="spO" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/></svg>
@@ -487,7 +496,7 @@ header{flex-wrap:wrap}
   </div>
 </div>
 
-<script src="../config.js"></script>
-<script src="../js/admin.js"></script>
+<script src="../config.js?v=20261123c"></script>
+<script src="../js/admin.js?v=20261123c"></script>
 </body>
 </html>

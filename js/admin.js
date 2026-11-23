@@ -363,7 +363,7 @@
   let photoReady = false;
   const stage = $('#stage');
   let cropC = null, cropAng = 0, cropRect = null, found = null, exact = null; // exact: bordi trovati, finché lei non tocca niente
-  const cropR = $('#cropImg');
+  const cropR = document.createElement('canvas'); // la foto girata (per la lente); sullo schermo va come immagine
   const DEF_RECT = () => ({ x0: .06, y0: .06, x1: .94, y1: .94 });
   const rotPt = (x, y, a, W, H) => { const c = Math.cos(a), s = Math.sin(a), dx = x - W / 2, dy = y - H / 2; return [W / 2 + dx * c - dy * s, H / 2 + dx * s + dy * c]; };
   function rectToQuad() {
@@ -384,6 +384,7 @@
     if (cropR.width !== W || cropR.height !== H) { cropR.width = W; cropR.height = H; }
     const x = cropR.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#2a2622'; x.fillRect(0, 0, W, H);
     x.translate(W / 2, H / 2); x.rotate(cropAng * Math.PI / 180); x.drawImage(cropC, -W / 2, -H / 2);
+    $('#cropImg').src = cropR.toDataURL('image/jpeg', .82);
   }
   let resT = 0;
   function cropResult() { // anteprima piccola del risultato
@@ -467,7 +468,7 @@
   }
   $('#cropRot').onclick = () => { rotate90(); openCrop(false); };
   function openCrop(keep) {
-    cropC = scaled(src, 1600);
+    cropC = scaled(src, 1300);
     if (!keep || !cropRect) {
       try { found = detectQuad(cropC); } catch (e) { found = null; }
       if (found) fromQuad(found); else { cropAng = 0; cropRect = DEF_RECT(); }
@@ -542,7 +543,20 @@
   $('#tuneRot').onclick = () => { if (!src) return; rotate90(); geoDirty = true; refreshMock(); };
   $('#tuneGrid').onclick = () => { gridLock = !gridLock; $('#tuneGrid').classList.toggle('on', gridLock); $('#mGrid').classList.toggle('on', gridLock); };
   // "com'era": tenendo premuto si vede la foto senza ritocchi
-  const before = on => { if (!base) return; $('#preview').src = on ? (base.__plain || (base.__plain = base.toDataURL('image/jpeg', .85))) : lastUrl; };
+  const before = on => { if (!base) return; const u = on ? (base.__plain || (base.__plain = base.toDataURL('image/jpeg', .85))) : lastUrl; $('#preview').src = u; $('#floatImg').src = u; };
+  // se l'anteprima grande esce dallo schermo mentre si regolano i comandi, compare la finestrella
+  let fpRaf = 0;
+  function checkFloat() {
+    cancelAnimationFrame(fpRaf);
+    fpRaf = requestAnimationFrame(() => {
+      const fp = $('#floatPrev'), tune = $('#tune');
+      if (tune.hidden || !$('#p-new').classList.contains('on') || !lastUrl) { fp.hidden = true; return; }
+      const m = $('#mCv').getBoundingClientRect(), t = tune.getBoundingClientRect();
+      const mockGone = m.bottom < 60 || m.top > innerHeight - 40, tuneOn = t.top < innerHeight && t.bottom > 0;
+      fp.hidden = !(mockGone && tuneOn);
+    });
+  }
+  addEventListener('scroll', checkFloat, { passive: true }); addEventListener('resize', checkFloat);
   let lastUrl = '';
   ['pointerdown'].forEach(ev => $('#tuneBefore').addEventListener(ev, e => { e.preventDefault(); $('#tuneBefore').classList.add('on'); before(true); }));
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('#tuneBefore').addEventListener(ev, () => { if ($('#tuneBefore').classList.contains('on')) { $('#tuneBefore').classList.remove('on'); before(false); } }));
@@ -609,7 +623,7 @@
     if (!src) return;
     if (geoDirty || !base) makeBase();
     lastUrl = render(base, T).toDataURL('image/jpeg', .85);
-    $('#preview').src = lastUrl; $('#mCv').style.setProperty('--img', `url("${lastUrl}")`);
+    $('#preview').src = lastUrl; $('#floatImg').src = lastUrl; $('#mCv').style.setProperty('--img', `url("${lastUrl}")`);
   }
   $('#f-dim').addEventListener('change', () => { if (src) { geoDirty = true; refreshMock(); } });
   // foto finale, alla massima qualità, con gli stessi ritocchi
@@ -617,7 +631,7 @@
 
   async function showPreview() {
     geoDirty = true; refreshMock(); syncTune();
-    $('#tune').hidden = false; $('#retouchOld').hidden = true; $('#drop').classList.add('full');
+    $('#tune').hidden = false; $('#retouchOld').hidden = true; $('#drop').classList.add('full'); checkFloat();
     $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
     $('#crop').hidden = true; $('#drop').hidden = false; $('#recrop').hidden = !corners && !src;
     photoReady = true;
@@ -642,7 +656,7 @@
     return o;
   }
   function resetForm() {
-    $('#drop').classList.remove('full');
+    $('#drop').classList.remove('full'); $('#floatPrev').hidden = true;
     editing = null; src = null; corners = null; photoReady = false; base = null; T = { ...T0 }; $('#tune').hidden = true; $('#retouchOld').hidden = true; $('#mCv').style.removeProperty('--img');
     for (const k in F) $(F[k]).value = '';
     $('input[name=stato][value=disponibile]').checked = true;
