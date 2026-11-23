@@ -29,11 +29,9 @@
     return '';
   }
   let REPO = detectRepo();
-  // dopo l'ingresso con la password il telefono resta dentro per 14 giorni, poi la richiede
-  const SESSION_DAYS = 14;
-  if (+store.get('ss_exp') < Date.now()) { store.del('ss_token'); store.del('ss_exp'); }
+  // dopo l'ingresso con la password il telefono resta dentro finché non si preme "esci"
   let TOKEN = store.get('ss_token');
-  const remember = () => { store.set('ss_token', TOKEN); store.set('ss_exp', String(Date.now() + SESSION_DAYS * 864e5)); };
+  const remember = () => { store.set('ss_token', TOKEN); store.del('ss_exp'); };
 
   /* ---------- GitHub ---------- */
   async function api(path, opts = {}) {
@@ -356,26 +354,58 @@
     }
   }
 
-  /* ---------- editor dei 4 angoli ---------- */
+  /* ---------- ritaglio dritto, come sulla fotocamera del telefono ----------
+     La cornice resta sempre un rettangolo dritto; se la foto è storta si gira
+     la foto sotto la cornice (Inclinazione). Da cornice + inclinazione ricavo
+     i 4 angoli nella foto originale, che poi viene ritagliata alla massima qualità. */
   let src = null;        // foto originale aperta
-  let corners = null;    // 4 angoli scelti (0..1), oppure null = foto intera
+  let corners = null;    // 4 angoli nella foto originale (0..1), oppure null = foto intera
   let photoReady = false;
   const stage = $('#stage');
-  const defaultCorners = () => [{ x: .06, y: .06 }, { x: .94, y: .06 }, { x: .94, y: .94 }, { x: .06, y: .94 }];
+  let cropC = null, cropAng = 0, cropRect = null, found = null, exact = null; // exact: bordi trovati, finché lei non tocca niente
+  const cropR = $('#cropImg');
+  const DEF_RECT = () => ({ x0: .06, y0: .06, x1: .94, y1: .94 });
+  const rotPt = (x, y, a, W, H) => { const c = Math.cos(a), s = Math.sin(a), dx = x - W / 2, dy = y - H / 2; return [W / 2 + dx * c - dy * s, H / 2 + dx * s + dy * c]; };
+  function rectToQuad() {
+    if (exact) { corners = exact.map(p => ({ ...p })); return; }
+    const W = cropC.width, H = cropC.height, a = -cropAng * Math.PI / 180, r = cropRect;
+    corners = [[r.x0, r.y0], [r.x1, r.y0], [r.x1, r.y1], [r.x0, r.y1]].map(([u, v]) => { const [x, y] = rotPt(u * W, v * H, a, W, H); return { x: x / W, y: y / H }; });
+  }
+  function fromQuad(Q) { // dal quadro trovato: quanto è storto e dove sta la cornice
+    const W = cropC.width, H = cropC.height, P = Q.map(q => [q.x * W, q.y * H]);
+    const ang = (p, q) => Math.atan2(q[1] - p[1], q[0] - p[0]);
+    const tilt = (ang(P[0], P[1]) + ang(P[3], P[2]) + ang(P[0], P[3]) - Math.PI / 2 + ang(P[1], P[2]) - Math.PI / 2) / 4;
+    cropAng = Math.max(-15, Math.min(15, Math.round(-tilt * 1800 / Math.PI) / 10));
+    const a = cropAng * Math.PI / 180, D = P.map(([x, y]) => rotPt(x, y, a, W, H)), cl = v => Math.min(1, Math.max(0, v));
+    cropRect = { x0: cl((D[0][0] + D[3][0]) / 2 / W), x1: cl((D[1][0] + D[2][0]) / 2 / W), y0: cl((D[0][1] + D[1][1]) / 2 / H), y1: cl((D[3][1] + D[2][1]) / 2 / H) };
+  }
+  function renderRotated() {
+    const W = cropC.width, H = cropC.height;
+    if (cropR.width !== W || cropR.height !== H) { cropR.width = W; cropR.height = H; }
+    const x = cropR.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#2a2622'; x.fillRect(0, 0, W, H);
+    x.translate(W / 2, H / 2); x.rotate(cropAng * Math.PI / 180); x.drawImage(cropC, -W / 2, -H / 2);
+  }
+  let resT = 0;
+  function cropResult() { // anteprima piccola del risultato
+    clearTimeout(resT);
+    resT = setTimeout(() => { if (cropC && corners) $('#cropRes').src = warp(cropC, corners, 240, parseDims($('#f-dim').value)).toDataURL('image/jpeg', .8); }, 60);
+  }
   function drawCrop() {
-    $$('.hdl:not(.hdl--m)').forEach((h, k) => { h.style.left = (corners[k].x * 100) + '%'; h.style.top = (corners[k].y * 100) + '%'; });
-    $$('.hdl--m').forEach(h => { const [a, b] = SIDES[+h.dataset.s]; h.style.left = ((corners[a].x + corners[b].x) * 50) + '%'; h.style.top = ((corners[a].y + corners[b].y) * 50) + '%'; });
-    const pts = corners.map(p => `${p.x},${p.y}`).join(' ');
-    $('#cropPoly').setAttribute('points', pts);
-    $('#cropShade').setAttribute('d', `M0 0H1V1H0Z M${corners.map(p => `${p.x} ${p.y}`).join(' L')}Z`);
+    const r = cropRect, pts = [[r.x0, r.y0], [r.x1, r.y0], [r.x1, r.y1], [r.x0, r.y1]];
+    $$('.hdl:not(.hdl--m)').forEach((h, k) => { h.style.left = pts[k][0] * 100 + '%'; h.style.top = pts[k][1] * 100 + '%'; });
+    const mids = [[(r.x0 + r.x1) / 2, r.y0], [r.x1, (r.y0 + r.y1) / 2], [(r.x0 + r.x1) / 2, r.y1], [r.x0, (r.y0 + r.y1) / 2]];
+    $$('.hdl--m').forEach(h => { const m = mids[+h.dataset.s]; h.style.left = m[0] * 100 + '%'; h.style.top = m[1] * 100 + '%'; });
+    $('#cropPoly').setAttribute('points', pts.map(p => p.join(',')).join(' '));
+    $('#cropShade').setAttribute('d', `M0 0H1V1H0Z M${pts.map(p => p.join(' ')).join(' L')}Z`);
+    const g = $('#cGrid').style; g.left = r.x0 * 100 + '%'; g.top = r.y0 * 100 + '%'; g.width = (r.x1 - r.x0) * 100 + '%'; g.height = (r.y1 - r.y0) * 100 + '%';
+    rectToQuad();
   }
   // lente d'ingrandimento sopra il dito
-  let cropC = null; const loupe = $('#loupe'), lx = loupe.getContext('2d');
-  function showLoupe(k, ev) {
-    if (!cropC) return;
-    const z = 4, S = 240, p = corners[k], sx = p.x * cropC.width, sy = p.y * cropC.height, half = S / (2 * z) * (cropC.width / stage.getBoundingClientRect().width);
+  const loupe = $('#loupe'), lx = loupe.getContext('2d');
+  function showLoupe(u, v, ev) {
+    const z = 4, S = 240, sx = u * cropR.width, sy = v * cropR.height, half = S / (2 * z) * (cropR.width / stage.getBoundingClientRect().width);
     lx.fillStyle = '#000'; lx.fillRect(0, 0, S, S);
-    lx.drawImage(cropC, sx - half, sy - half, half * 2, half * 2, 0, 0, S, S);
+    lx.drawImage(cropR, sx - half, sy - half, half * 2, half * 2, 0, 0, S, S);
     lx.strokeStyle = '#fff'; lx.lineWidth = 2; lx.beginPath(); lx.moveTo(S / 2, S / 2 - 22); lx.lineTo(S / 2, S / 2 + 22); lx.moveTo(S / 2 - 22, S / 2); lx.lineTo(S / 2 + 22, S / 2); lx.stroke();
     lx.strokeStyle = '#b0241c'; lx.lineWidth = 1; lx.beginPath(); lx.arc(S / 2, S / 2, 5, 0, 7); lx.stroke();
     const up = ev.clientY - 150 > 8;
@@ -383,53 +413,76 @@
     loupe.style.top = (up ? ev.clientY - 150 : ev.clientY + 40) + 'px';
     loupe.hidden = false;
   }
+  const MIN = .08;
+  function setEdge(e, v) {
+    const r = cropRect; v = Math.min(1, Math.max(0, v));
+    if (e === 'x0') r.x0 = Math.min(v, r.x1 - MIN); if (e === 'x1') r.x1 = Math.max(v, r.x0 + MIN);
+    if (e === 'y0') r.y0 = Math.min(v, r.y1 - MIN); if (e === 'y1') r.y1 = Math.max(v, r.y0 + MIN);
+  }
+  const CORNER_EDGES = [['x0', 'y0'], ['x1', 'y0'], ['x1', 'y1'], ['x0', 'y1']], SIDE_EDGE = ['y0', 'x1', 'y1', 'x0'];
+  function dragHandle(h, onMove) {
+    h.addEventListener('pointerdown', e => {
+      e.preventDefault(); h.setPointerCapture(e.pointerId);
+      const move = ev => { const r = stage.getBoundingClientRect(); onMove((ev.clientX - r.left) / r.width, (ev.clientY - r.top) / r.height, ev); };
+      exact = null; move(e);
+      const up = () => { loupe.hidden = true; cropResult(); h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up); };
+      h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
+    });
+  }
   $$('.hdl:not(.hdl--m)').forEach(h => {
-    h.addEventListener('pointerdown', e => {
-      e.preventDefault(); h.setPointerCapture(e.pointerId);
-      const k = +h.dataset.k;
-      showLoupe(k, e);
-      const move = ev => {
-        const r = stage.getBoundingClientRect();
-        corners[k] = { x: Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)), y: Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height)) };
-        drawCrop(); showLoupe(k, ev);
-      };
-      const up = () => { loupe.hidden = true; h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up); };
-      h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
-    });
+    const [ex, ey] = CORNER_EDGES[+h.dataset.k];
+    dragHandle(h, (u, v, ev) => { setEdge(ex, u); setEdge(ey, v); drawCrop(); showLoupe(cropRect[ex], cropRect[ey], ev); });
   });
-  // maniglie a metà dei lati: spostano un lato intero
-  const SIDES = [[0, 1], [1, 2], [2, 3], [3, 0]];
   $$('.hdl--m').forEach(h => {
-    h.addEventListener('pointerdown', e => {
-      e.preventDefault(); h.setPointerCapture(e.pointerId);
-      const [a, b] = SIDES[+h.dataset.s], r0 = stage.getBoundingClientRect();
-      const start = { x: e.clientX, y: e.clientY }, A0 = { ...corners[a] }, B0 = { ...corners[b] };
-      const cl = v => Math.min(1, Math.max(0, v));
-      const move = ev => {
-        const dx = (ev.clientX - start.x) / r0.width, dy = (ev.clientY - start.y) / r0.height;
-        corners[a] = { x: cl(A0.x + dx), y: cl(A0.y + dy) }; corners[b] = { x: cl(B0.x + dx), y: cl(B0.y + dy) };
-        drawCrop();
-      };
-      const up = () => { h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up); };
-      h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
+    const ed = SIDE_EDGE[+h.dataset.s];
+    dragHandle(h, (u, v, ev) => {
+      setEdge(ed, ed[0] === 'x' ? u : v); drawCrop();
+      const r = cropRect; showLoupe(ed[0] === 'x' ? r[ed] : (r.x0 + r.x1) / 2, ed[0] === 'y' ? r[ed] : (r.y0 + r.y1) / 2, ev);
     });
   });
-  let found = null;
+  // inclinazione della foto sotto la cornice
+  let angRaf = 0, cgT = 0;
+  function showAng() { $('#caRange').value = cropAng; const o = $('#caOut'); o.textContent = (cropAng > 0 ? '+' : '') + cropAng.toFixed(1).replace(/\.0$/, '') + '°'; o.classList.toggle('chg', cropAng !== 0); }
+  function setAng(v) {
+    exact = null; cropAng = Math.max(-15, Math.min(15, Math.round(v * 10) / 10)); showAng();
+    $('#cGrid').classList.add('on'); clearTimeout(cgT); cgT = setTimeout(() => $('#cGrid').classList.remove('on'), 1400);
+    cancelAnimationFrame(angRaf); angRaf = requestAnimationFrame(() => { renderRotated(); drawCrop(); cropResult(); });
+  }
+  $('#caRange').addEventListener('input', e => setAng(+e.target.value));
+  $('.cropAngle').addEventListener('click', e => { const b = e.target.closest('button[data-d]'); if (b) setAng(cropAng + .1 * +b.dataset.d); if (e.target.id === 'caOut') setAng(0); });
+  // tenendo premuto − o + il valore continua a cambiare
+  let holdT = 0, holdI = 0;
+  document.addEventListener('pointerdown', e => {
+    const b = e.target.closest('.slc button[data-d]'); if (!b) return;
+    holdT = setTimeout(() => { holdI = setInterval(() => b.click(), 70); }, 380);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(holdT); clearInterval(holdI); }, true));
+
+  function rotate90() {
+    const c = document.createElement('canvas'); c.width = src.height; c.height = src.width;
+    const x = c.getContext('2d'); x.translate(c.width, 0); x.rotate(Math.PI / 2); x.drawImage(src, 0, 0);
+    src = c;
+    if (corners) { const r = p => ({ x: 1 - p.y, y: p.x }); corners = [r(corners[3]), r(corners[0]), r(corners[1]), r(corners[2])]; }
+    cropRect = null; exact = null;
+  }
+  $('#cropRot').onclick = () => { rotate90(); openCrop(false); };
   function openCrop(keep) {
-    if (!keep || !corners) {
-      try { found = detectQuad(src); } catch (e) { found = null; }
-      corners = found ? found.map(p => ({ ...p })) : defaultCorners();
+    cropC = scaled(src, 1600);
+    if (!keep || !cropRect) {
+      try { found = detectQuad(cropC); } catch (e) { found = null; }
+      if (found) fromQuad(found); else { cropAng = 0; cropRect = DEF_RECT(); }
+      exact = found ? found.map(p => ({ ...p })) : null;
     }
     const tip = $('#cropTip'); tip.classList.toggle('found', !!found);
     tip.innerHTML = found
-      ? '<b>Ho trovato il quadro ✓</b> Controlla che i 4 pallini rossi siano proprio sugli angoli della tela (tenendoli premuti li vedi da vicino). I pallini bianchi spostano un lato intero. Poi premi <b>Raddrizza</b>.'
-      : '<b>Trascina i 4 pallini rossi sugli angoli del quadro</b> (tenendoli premuti li vedi da vicino). I pallini bianchi spostano un lato intero. Così la foto diventa dritta, senza muro intorno.';
-    cropC = scaled(src, 1600);
-    $('#cropImg').src = cropC.toDataURL('image/jpeg', .85);
+      ? '<b>Ho trovato il quadro ✓</b> e l\'ho già messo dritto. Controlla che la cornice stia sui bordi della tela: i pallini rossi spostano gli angoli, quelli bianchi un lato (tenendoli premuti li vedi da vicino). Poi premi <b>Ritaglia</b>.'
+      : '<b>Porta la cornice sui bordi del quadro:</b> i pallini rossi spostano gli angoli, quelli bianchi un lato (tenendoli premuti li vedi da vicino). Se la foto è storta, girala con <b>Inclinazione</b>. Poi premi <b>Ritaglia</b>.';
+    renderRotated(); showAng();
     $('#crop').hidden = false; $('#drop').hidden = true; $('#recrop').hidden = true;
-    drawCrop();
+    drawCrop(); cropResult();
     $('#crop').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
   /* ---------- ritocchi ----------
      Forma e margini cambiano i 4 angoli (poi la foto viene raddrizzata di nuovo);
      inclinazione, luce e colore si applicano dopo. La stessa funzione disegna
@@ -437,7 +490,7 @@
      che viene pubblicato. */
   const TUNE = [
     ['g', 'Forma'],
-    ['rot', 'Inclinazione', -10, 10, .1, '°', 'gira la foto per raddrizzarla'],
+    ['rot', 'Inclinazione', -15, 15, .1, '°', 'gira la foto per raddrizzarla'],
     ['kv', 'Prospettiva alto / basso', -15, 15, .5, '', 'se la tela sembra più stretta sopra o sotto'],
     ['kh', 'Prospettiva sinistra / destra', -15, 15, .5, '', 'se un lato sembra più corto dell\'altro'],
     ['g', 'Margini  ( − allarga · + stringe )'],
@@ -452,12 +505,22 @@
   const GEO = ['kv', 'kh', 'top', 'bottom', 'left', 'right'];
   const T0 = Object.fromEntries(TUNE.filter(r => r[0] !== 'g').map(r => [r[0], 0]));
   let T = { ...T0 }, base = null, tuneRaf = 0, geoDirty = false, gridLock = false, gridTimer = 0;
-  $('#tuneRows').innerHTML = TUNE.map(r => r[0] === 'g' ? `<p class="tg">${r[1]}</p>` : `
-    <div class="sl" data-k="${r[0]}">
+  const GROUP = { rot: 'forma', kv: 'forma', kh: 'forma', top: 'margini', bottom: 'margini', left: 'margini', right: 'margini' };
+  $('#tuneRows').innerHTML = TUNE.map(r => r[0] === 'g' ? `<p class="tg" data-g="${r[1].startsWith('Forma') ? 'forma' : r[1].startsWith('Margini') ? 'margini' : 'colore'}">${r[1]}</p>` : `
+    <div class="sl" data-k="${r[0]}" data-g="${GROUP[r[0]] || 'colore'}">
       <div class="slh"><span>${r[1]}${r[6] ? `<small>${r[6]}</small>` : ''}</span><output data-o="${r[0]}" title="tocca per azzerare">0${r[5]}</output></div>
       <div class="slc"><button type="button" data-d="-1" aria-label="meno">−</button><input type="range" data-k="${r[0]}" min="${r[2]}" max="${r[3]}" step="${r[4]}" value="0" aria-label="${r[1]}"><button type="button" data-d="1" aria-label="più">+</button></div>
     </div>`).join('');
   const rowOf = k => TUNE.find(x => x[0] === k);
+  // il pulsante "gira di 90°" sta nella scheda Forma
+  $('#tuneRows').insertAdjacentHTML('afterbegin', '<button type="button" class="rot90" data-g="forma" id="tuneRot">↻ Gira la foto di 90°</button>');
+  // schede Forma / Margini / Colore: si vedono pochi comandi alla volta, l'anteprima resta in vista
+  function showGroup(g) {
+    $$('#tuneSeg button').forEach(b => b.classList.toggle('on', b.dataset.g === g));
+    $$('#tuneRows [data-g]').forEach(el => el.classList.toggle('g-hide', el.dataset.g !== g));
+  }
+  $('#tuneSeg').addEventListener('click', e => { const b = e.target.closest('button[data-g]'); if (b) showGroup(b.dataset.g); });
+  showGroup('forma');
   const fmt = (k, v) => { const r = rowOf(k); return (v > 0 && r[2] < 0 ? '+' : '') + (+v).toFixed(r[4] < 1 ? 1 : 0).replace(/\.0$/, '') + r[5]; };
   function showVal(k) { const o = $(`output[data-o="${k}"]`); o.textContent = fmt(k, T[k]); o.classList.toggle('chg', T[k] !== 0); }
   function syncTune() { $$('#tuneRows input').forEach(i => { i.value = T[i.dataset.k]; showVal(i.dataset.k); }); }
@@ -476,6 +539,7 @@
     if (out) setT(out.dataset.o, 0);
   });
   $('#tuneReset').onclick = () => { const geo = GEO.some(k => T[k]); T = { ...T0 }; syncTune(); if (geo) geoDirty = true; refreshMock(); };
+  $('#tuneRot').onclick = () => { if (!src) return; rotate90(); geoDirty = true; refreshMock(); };
   $('#tuneGrid').onclick = () => { gridLock = !gridLock; $('#tuneGrid').classList.toggle('on', gridLock); $('#mGrid').classList.toggle('on', gridLock); };
   // "com'era": tenendo premuto si vede la foto senza ritocchi
   const before = on => { if (!base) return; $('#preview').src = on ? (base.__plain || (base.__plain = base.toDataURL('image/jpeg', .85))) : lastUrl; };
@@ -553,13 +617,13 @@
 
   async function showPreview() {
     geoDirty = true; refreshMock(); syncTune();
-    $('#tune').hidden = false; $('#retouchOld').hidden = true;
+    $('#tune').hidden = false; $('#retouchOld').hidden = true; $('#drop').classList.add('full');
     $('#dropEmpty').hidden = true; $('#dropFull').hidden = false;
     $('#crop').hidden = true; $('#drop').hidden = false; $('#recrop').hidden = !corners && !src;
     photoReady = true;
     $('#drop').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-  $('#cropOk').onclick = async () => { busy('Raddrizzo la foto…'); await new Promise(r => setTimeout(r, 30)); try { await showPreview(); idle(); } catch (e) { fail(e); } };
+  $('#cropOk').onclick = async () => { busy('Ritaglio la foto…'); await new Promise(r => setTimeout(r, 30)); try { await showPreview(); idle(); } catch (e) { fail(e); } };
   $('#cropSkip').onclick = async () => { corners = null; busy('Preparo la foto…'); await new Promise(r => setTimeout(r, 30)); await showPreview(); idle(); };
   $('#recrop').onclick = () => openCrop(true);
 
@@ -578,20 +642,21 @@
     return o;
   }
   function resetForm() {
+    $('#drop').classList.remove('full');
     editing = null; src = null; corners = null; photoReady = false; base = null; T = { ...T0 }; $('#tune').hidden = true; $('#retouchOld').hidden = true; $('#mCv').style.removeProperty('--img');
     for (const k in F) $(F[k]).value = '';
     $('input[name=stato][value=disponibile]').checked = true;
     $('#dropEmpty').hidden = false; $('#dropFull').hidden = true; $('#drop').hidden = false;
     $('#crop').hidden = true; $('#recrop').hidden = true;
     $('#formTitle').textContent = 'Nuova opera';
-    $('#formLead').textContent = 'Fotografa il quadro: gli angoli della tela li trovo io, tu controlli e premi Raddrizza. Poi scrivi due righe e premi Pubblica.';
+    $('#formLead').textContent = 'Fotografa il quadro: lo trovo e lo metto dritto io, tu controlli e premi Ritaglia. Poi ritocchi se serve, scrivi due righe e premi Pubblica.';
     $('#publish').textContent = 'Pubblica'; $('#cancelEdit').hidden = true;
   }
   $('#cancelEdit').onclick = () => { resetForm(); tab('list'); };
 
   $('#publish').onclick = async () => {
     const data = readForm();
-    if (!$('#crop').hidden) { say('Prima gli angoli', 'Premi "Raddrizza" (o "Usa la foto intera") sotto la foto.'); return; }
+    if (!$('#crop').hidden) { say('Prima il ritaglio', 'Premi "Ritaglia" (o "Usa la foto intera") sotto la foto.'); return; }
     if (!editing && !photoReady) { say('Manca la foto', 'Trascina o scegli la foto del quadro.'); return; }
     if (!data.titolo) { $('#f-titolo').focus(); $('#f-titolo').style.borderColor = 'var(--red)'; setTimeout(() => $('#f-titolo').style.borderColor = '', 1500); return; }
     try {

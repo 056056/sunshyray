@@ -145,6 +145,38 @@ h1::after{content:"";display:block;width:min(260px,70%);height:12px;margin-top:4
 #retouchOld{margin:0 0 14px}
 #tuneReset{margin:10px 0 8px;padding:11px;font-size:14px}
 
+/* anteprima fissa + comandi a schede */
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--ink-3);padding:4px;border-radius:99px;margin:10px 0 4px}
+.seg button{padding:11px 6px;border-radius:99px;font-size:15px;color:var(--dim)}
+.seg button.on{background:var(--bone);color:var(--ink)}
+.tb small{font-size:.8em;color:var(--dim)}
+.tb.on small{color:inherit}
+.g-hide{display:none!important}
+.rot90{display:block;width:100%;margin:6px 0 2px;padding:12px;border-radius:99px;border:1px dashed var(--line);font-size:15px}
+#cropRot{margin-top:12px}
+.cropAngle{margin-top:14px;border:0}
+.crop .slc input{display:block;width:100%;height:34px;accent-color:#b0241c;touch-action:pan-y;cursor:pointer}
+.crop__stage .mgrid{inset:auto;mix-blend-mode:normal;outline:0;background:linear-gradient(90deg,transparent calc(33.33% - .5px),rgba(255,255,255,.8) calc(33.33% - .5px) calc(33.33% + .5px),transparent 0,transparent calc(66.66% - .5px),rgba(255,255,255,.8) calc(66.66% - .5px) calc(66.66% + .5px),transparent 0),linear-gradient(0deg,transparent calc(33.33% - .5px),rgba(255,255,255,.8) calc(33.33% - .5px) calc(33.33% + .5px),transparent 0,transparent calc(66.66% - .5px),rgba(255,255,255,.8) calc(66.66% - .5px) calc(66.66% + .5px),transparent 0),repeating-linear-gradient(90deg,rgba(255,255,255,.25) 0 1px,transparent 1px 8.333%),repeating-linear-gradient(0deg,rgba(255,255,255,.25) 0 1px,transparent 1px 8.333%)}
+.cropRes{display:flex;align-items:center;gap:14px;margin-top:14px;text-align:left}
+.cropRes img{width:92px;height:auto;max-height:120px;object-fit:contain;box-shadow:3px 5px 10px -4px rgba(40,30,20,.5);background:#2a2622;flex:none}
+.cropRes p{font-family:var(--serif);font-size:16px;color:var(--dim);line-height:1.35}
+.cropRes b{color:var(--bone)}
+#drop.full{overflow:visible}
+@media (max-width:899px){
+  .tabs{position:static}
+  .mockStick{position:sticky;top:0;z-index:6;margin:-14px -29px 0;padding:10px 12px 4px;background:var(--ink-2) url(../img/carta.jpg) 0 0/384px;border-bottom:1px solid var(--line);box-shadow:0 10px 18px -14px rgba(40,30,20,.45)}
+  .mock{padding:16px 12px 26px}
+  .drop .mock .cv img{max-height:34svh}
+  .mockCap{font-size:21px;margin-top:2px}
+  .tune{margin-top:10px;padding:10px 12px 4px}
+  .tune h3{display:none}
+  .tbtns{flex-wrap:nowrap;gap:6px;margin-top:0}
+  .tb{flex:1;padding:9px 6px;font-size:13px;white-space:nowrap}
+  .tb small{display:none}
+  .sl{padding:5px 0 3px}
+  .slh small{display:none}
+}
+
 /* overlay */
 .ov{position:fixed;inset:0;z-index:50;background:rgba(242,237,227,.94);backdrop-filter:blur(6px);display:none;place-items:center;text-align:center;padding:24px}
 .ov.on{display:grid;animation:fade .4s var(--ease)}
@@ -162,7 +194,7 @@ h1::after{content:"";display:block;width:min(260px,70%);height:12px;margin-top:4
 .cropTip b{color:var(--bone)}
 .crop__wrap{display:grid;place-items:center;background:#2a2622;border-radius:12px;padding:22px;overflow:hidden}
 .crop__stage{position:relative;display:inline-block;touch-action:none;user-select:none;-webkit-user-select:none}
-.crop__stage img{display:block;max-width:100%;max-height:62svh;width:auto;pointer-events:none}
+.crop__stage img,.crop__stage canvas#cropImg{display:block;max-width:100%;max-height:62svh;width:auto;height:auto;pointer-events:none}
 .crop__stage svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 #cropShade{fill:rgba(0,0,0,.5)}
 #cropPoly{fill:none;stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke;stroke-dasharray:6 4}
@@ -174,6 +206,10 @@ h1::after{content:"";display:block;width:min(260px,70%);height:12px;margin-top:4
 
 /* sul computer: testi grandi il doppio */
 @media (min-width:900px){
+.cropRes img{width:160px;max-height:200px}
+.cropRes p{font-size:28px}
+.seg button{font-size:28px}
+.rot90,#cropRot{font-size:26px}
 .tg{font-size:20px}
 .slh span{font-size:26px}
 .slh small{font-size:22px}
@@ -290,7 +326,7 @@ header{flex-wrap:wrap}
     <!-- NUOVA / MODIFICA OPERA -->
     <div class="panel on" id="p-new">
       <h1 id="formTitle">Nuova opera</h1>
-      <p class="lead" id="formLead">Fotografa il quadro: gli angoli della tela li trovo io, tu controlli e premi Raddrizza. Poi scrivi due righe e premi Pubblica.</p>
+      <p class="lead" id="formLead">Fotografa il quadro: lo trovo e lo metto dritto io, tu controlli e premi Ritaglia. Poi ritocchi se serve, scrivi due righe e premi Pubblica.</p>
       <div class="drop" id="drop">
         <div id="dropEmpty">
           <svg class="sp" viewBox="-100 -100 200 200"><path id="spD" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg>
@@ -303,14 +339,21 @@ header{flex-wrap:wrap}
         </div>
         <div id="dropFull" hidden>
           <button type="button" class="ghost" id="retouchOld" hidden>✎ Ritocca questa foto</button>
-          <div class="mock"><span class="cv" id="mCv"><img id="preview" alt=""><i class="weave"></i><i class="mgrid" id="mGrid"></i></span></div>
-          <p class="mockCap">così apparirà sul sito</p>
+          <div class="mockStick" id="mockStick">
+            <div class="mock"><span class="cv" id="mCv"><img id="preview" alt=""><i class="weave"></i><i class="mgrid" id="mGrid"></i></span></div>
+            <p class="mockCap">così apparirà sul sito</p>
+          </div>
           <div class="tune" id="tune" hidden>
             <h3>Ritocchi</h3>
             <div class="tbtns">
-              <button type="button" class="tb" id="tuneAuto">✨ Luce automatica</button>
-              <button type="button" class="tb" id="tuneBefore">👁 Tieni premuto: com'era</button>
+              <button type="button" class="tb" id="tuneAuto">✨ Luce auto</button>
+              <button type="button" class="tb" id="tuneBefore">👁 Com'era <small>(tieni premuto)</small></button>
               <button type="button" class="tb" id="tuneGrid">▦ Griglia</button>
+            </div>
+            <div class="seg" id="tuneSeg">
+              <button type="button" data-g="forma" class="on">Forma</button>
+              <button type="button" data-g="margini">Margini</button>
+              <button type="button" data-g="colore">Colore</button>
             </div>
             <div id="tuneRows"></div>
             <button type="button" class="ghost" id="tuneReset">Azzera tutti i ritocchi</button>
@@ -327,7 +370,8 @@ header{flex-wrap:wrap}
       <div class="crop" id="crop" hidden>
         <p class="cropTip" id="cropTip"><b>Trascina i 4 pallini rossi sugli angoli del quadro.</b> Così la foto diventa dritta, senza muro intorno, e si appoggia bene sulla tela.</p>
         <div class="crop__wrap"><div class="crop__stage" id="stage">
-          <img id="cropImg" alt="">
+          <canvas id="cropImg"></canvas>
+          <i class="mgrid" id="cGrid"></i>
           <svg viewBox="0 0 1 1" preserveAspectRatio="none"><path id="cropShade" fill-rule="evenodd"/><polygon id="cropPoly"/></svg>
           <button type="button" class="hdl" data-k="0" aria-label="angolo in alto a sinistra"></button>
           <button type="button" class="hdl" data-k="1" aria-label="angolo in alto a destra"></button>
@@ -339,9 +383,15 @@ header{flex-wrap:wrap}
           <button type="button" class="hdl hdl--m" data-s="3" aria-label="lato sinistro"></button>
           <canvas class="loupe" id="loupe" width="240" height="240" hidden></canvas>
         </div></div>
+        <div class="sl cropAngle">
+          <div class="slh"><span>Inclinazione<small>se la foto è storta, girala finché il quadro sta dritto nella cornice</small></span><output id="caOut" title="tocca per azzerare">0°</output></div>
+          <div class="slc"><button type="button" data-d="-1" aria-label="meno">−</button><input type="range" id="caRange" min="-15" max="15" step="0.1" value="0" aria-label="Inclinazione"><button type="button" data-d="1" aria-label="più">+</button></div>
+        </div>
+        <div class="cropRes"><img id="cropRes" alt=""><p>← <b>così verrà</b>: dritto, senza muro intorno. Se non ti torna, sposta i pallini.</p></div>
+        <button type="button" class="ghost" id="cropRot">↻ Gira la foto di 90°</button>
         <div class="row">
           <button class="ghost" id="cropSkip">Usa la foto intera</button>
-          <button class="go go--s" id="cropOk">Raddrizza ✓</button>
+          <button class="go go--s" id="cropOk">Ritaglia ✓</button>
         </div>
       </div>
 
