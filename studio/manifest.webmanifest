@@ -8,7 +8,7 @@
   "background_color": "#f2ede3",
   "theme_color": "#f2ede3",
   "icons": [
-    { "src": "/icons/studio-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icons/studio-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/icons/studio-occhio-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/studio-occhio-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }
