@@ -91,6 +91,22 @@ h1{font-family:var(--hand);font-size:clamp(56px,13vw,84px);line-height:.9}
 h1::after{content:"";display:block;width:min(260px,70%);height:12px;margin-top:4px;background:no-repeat left/100% 100% url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 14' preserveAspectRatio='none'%3E%3Cpath d='M3 9 C 40 3, 70 12, 110 7 S 170 3, 197 8' fill='none' stroke='%23b0241c' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E")}
 .lead{font-family:var(--serif);font-size:19px;line-height:1.45}
 
+/* fotocamera / galleria */
+.drop{cursor:default}
+.picks{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:18px}
+.pick{display:inline-flex;align-items:center;gap:8px;padding:15px 22px;border-radius:99px;border:1px solid var(--line);background:var(--ink-2);font-size:16px;cursor:pointer;transition:transform .2s,border-color .3s}
+.pick:active{transform:scale(.97)}
+.pick:hover{border-color:var(--bone)}
+.pick--cam{background:var(--red);border-color:var(--red);color:#fbf9f4;font-weight:600}
+.pick input{display:none}
+.drop .tip{font-family:var(--serif);font-size:16px;color:var(--dim);max-width:440px;margin:18px auto 0;line-height:1.4}
+#dropFull .picks,#nbFull .picks{margin-top:16px}
+#dropFull .pick,#nbFull .pick{padding:11px 18px;font-size:14px}
+.only-mouse{display:none}
+@media (hover:hover) and (pointer:fine){.pick--cam{display:none}.only-touch{display:none}.only-mouse{display:inline}}
+.loupe{position:fixed;width:120px;height:120px;border-radius:50%;border:3px solid #fff;box-shadow:0 6px 20px rgba(0,0,0,.55);pointer-events:none;z-index:60;background:#000}
+.cropTip.found b{color:var(--ok)}
+
 /* overlay */
 .ov{position:fixed;inset:0;z-index:50;background:rgba(242,237,227,.94);backdrop-filter:blur(6px);display:none;place-items:center;text-align:center;padding:24px}
 .ov.on{display:grid;animation:fade .4s var(--ease)}
@@ -120,6 +136,9 @@ h1::after{content:"";display:block;width:min(260px,70%);height:12px;margin-top:4
 
 /* sul computer: testi grandi il doppio */
 @media (min-width:900px){
+.pick{font-size:28px}
+.drop .tip{font-size:30px;max-width:720px}
+#dropFull .pick,#nbFull .pick{font-size:24px}
 body{font-size:32px}
 .logo{font-size:50px}
 .small-btn{font-size:26px}
@@ -222,21 +241,29 @@ header{flex-wrap:wrap}
     <!-- NUOVA / MODIFICA OPERA -->
     <div class="panel on" id="p-new">
       <h1 id="formTitle">Nuova opera</h1>
-      <p class="lead" id="formLead">Scegli la foto del quadro, poi segna i 4 angoli: la foto viene raddrizzata e messa sulla tela. Poi scrivi due righe e premi Pubblica.</p>
-      <label class="drop" id="drop">
-        <input type="file" id="file" accept="image/*">
+      <p class="lead" id="formLead">Fotografa il quadro: gli angoli della tela li trovo io, tu controlli e premi Raddrizza. Poi scrivi due righe e premi Pubblica.</p>
+      <div class="drop" id="drop">
         <div id="dropEmpty">
           <svg class="sp" viewBox="-100 -100 200 200"><path id="spD" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg>
-          <div class="big">Trascina qui la foto</div>
-          <div class="hint">oppure tocca per sceglierla o scattarla</div>
+          <div class="big"><span class="only-touch">Fotografa il quadro</span><span class="only-mouse">Trascina qui la foto</span></div>
+          <div class="picks">
+            <label class="pick pick--cam"><input type="file" id="fileCam" accept="image/*" capture="environment">📷 Scatta la foto</label>
+            <label class="pick"><input type="file" id="file" accept="image/*">🖼 Scegli dalla galleria</label>
+          </div>
+          <p class="tip">Consiglio: mettiti <b>di fronte</b> al quadro, lascia <b>un po' di muro intorno</b>, buona luce e niente flash. Gli angoli li trovo io.</p>
         </div>
-        <div id="dropFull" hidden><img id="preview" alt=""><div class="change">tocca per cambiare foto</div></div>
-      </label>
+        <div id="dropFull" hidden><img id="preview" alt="">
+          <div class="picks">
+            <label class="pick pick--cam"><input type="file" id="fileCam2" accept="image/*" capture="environment">📷 Rifai la foto</label>
+            <label class="pick"><input type="file" id="file2" accept="image/*">🖼 Un'altra dalla galleria</label>
+          </div>
+        </div>
+      </div>
       <button class="ghost" id="recrop" hidden>Sistema di nuovo gli angoli</button>
 
       <!-- ritaglio a 4 angoli -->
       <div class="crop" id="crop" hidden>
-        <p class="cropTip"><b>Trascina i 4 pallini rossi sugli angoli del quadro.</b> Così la foto diventa dritta, senza muro intorno, e si appoggia bene sulla tela.</p>
+        <p class="cropTip" id="cropTip"><b>Trascina i 4 pallini rossi sugli angoli del quadro.</b> Così la foto diventa dritta, senza muro intorno, e si appoggia bene sulla tela.</p>
         <div class="crop__wrap"><div class="crop__stage" id="stage">
           <img id="cropImg" alt="">
           <svg viewBox="0 0 1 1" preserveAspectRatio="none"><path id="cropShade" fill-rule="evenodd"/><polygon id="cropPoly"/></svg>
@@ -244,6 +271,7 @@ header{flex-wrap:wrap}
           <button type="button" class="hdl" data-k="1" aria-label="angolo in alto a destra"></button>
           <button type="button" class="hdl" data-k="2" aria-label="angolo in basso a destra"></button>
           <button type="button" class="hdl" data-k="3" aria-label="angolo in basso a sinistra"></button>
+          <canvas class="loupe" id="loupe" width="240" height="240" hidden></canvas>
         </div></div>
         <div class="row">
           <button class="ghost" id="cropSkip">Usa la foto intera</button>
@@ -289,14 +317,21 @@ header{flex-wrap:wrap}
     <div class="panel" id="p-nb">
       <h1>Il mio quaderno</h1>
       <p class="lead">Pagine, schizzi, appunti. Qui la foto va bene così com'è: niente ritaglio.</p>
-      <label class="drop" id="nbDrop">
-        <input type="file" id="nbFile" accept="image/*">
+      <div class="drop" id="nbDrop">
         <div id="nbEmpty">
           <div class="big">Aggiungi una pagina</div>
-          <div class="hint">trascina qui la foto, oppure tocca per sceglierla o scattarla</div>
+          <div class="picks">
+            <label class="pick pick--cam"><input type="file" id="nbCam" accept="image/*" capture="environment">📷 Scatta la foto</label>
+            <label class="pick"><input type="file" id="nbFile" accept="image/*">🖼 Scegli dalla galleria</label>
+          </div>
         </div>
-        <div id="nbFull" hidden><img id="nbPreview" alt=""><div class="change">tocca per cambiare foto</div></div>
-      </label>
+        <div id="nbFull" hidden><img id="nbPreview" alt="">
+          <div class="picks">
+            <label class="pick pick--cam"><input type="file" id="nbCam2" accept="image/*" capture="environment">📷 Rifai la foto</label>
+            <label class="pick"><input type="file" id="nbFile2" accept="image/*">🖼 Un'altra dalla galleria</label>
+          </div>
+        </div>
+      </div>
       <div class="field"><label for="nb-nota">Nota scritta a mano <small>(facoltativa)</small></label><input id="nb-nota" placeholder="es. notte di marzo"></div>
       <div class="field"><label for="nb-nota-en">Nota in inglese <small>(facoltativa)</small></label><input id="nb-nota-en"></div>
       <button class="go" id="nbAdd">Aggiungi al quaderno</button>

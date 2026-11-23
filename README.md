@@ -33,7 +33,7 @@ Sito portfolio e vetrina dei dipinti di **sunshyray**. È un sito statico ospita
 
 ## Come si usa lo studio
 
-- **＋ Opera**: trascini o scegli la foto, poi trascini i **4 pallini sugli angoli del quadro**: la foto viene raddrizzata e ritagliata, così si appoggia bene sulla tela. Scrivi titolo, descrizione, **dimensioni** (larghezza × altezza: servono anche a mostrare la tela più grande o più piccola, come dal vero), prezzo, poi premi **Pubblica**.
+- **＋ Opera**: **📷 Scatta la foto** apre la fotocamera (oppure *Scegli dalla galleria*). Lo studio **trova da solo gli angoli del quadro**; se serve li sistemi col dito (tenendo premuto compare una lente). Meglio fotografare di fronte, con un po' di muro intorno e senza flash. In ogni caso puoi trascinare i **4 pallini sugli angoli del quadro**: la foto viene raddrizzata e ritagliata, così si appoggia bene sulla tela. Scrivi titolo, descrizione, **dimensioni** (larghezza × altezza: servono anche a mostrare la tela più grande o più piccola, come dal vero), prezzo, poi premi **Pubblica**.
 - **Quaderno**: foto di pagine, schizzi e appunti (senza ritaglio), con una nota facoltativa. Se è vuoto, la sezione sul sito resta nascosta.
 - **Opere**: qui puoi modificare un'opera, segnarla come venduta o disponibile, cambiare l'ordine con ↑ ↓ o eliminarla.
 - **Bio**: la frase d'apertura battuta a macchina (`~~parole~~` = cancellate a penna, `*parola*` = cerchiata in rosso), la bio (IT/EN), Instagram, email e WhatsApp. I link "scrivimi" sul sito usano questi contatti.

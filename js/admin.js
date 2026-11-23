@@ -204,11 +204,11 @@
   const toBlob = (canvas, q) => new Promise(r => canvas.toBlob(r, 'image/jpeg', q));
   const blobB64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
   const slug = s => (s || 'opera').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'opera';
-  function wireDrop(zone, input, onFile, isActive) {
+  function wireDrop(zone, inputs, onFile, isActive) {
     ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('over'); }));
     ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('over'); }));
     zone.addEventListener('drop', e => { e.stopPropagation(); const f = e.dataTransfer.files[0]; if (f) onFile(f); });
-    input.addEventListener('change', () => { if (input.files[0]) onFile(input.files[0]); input.value = ''; });
+    inputs.forEach(input => input.addEventListener('change', () => { if (input.files[0]) onFile(input.files[0]); input.value = ''; }));
     addEventListener('drop', e => { if (isActive() && e.dataTransfer.files[0]) { e.preventDefault(); onFile(e.dataTransfer.files[0]); } });
   }
   addEventListener('dragover', e => e.preventDefault());
@@ -264,6 +264,92 @@
     return out;
   }
 
+  /* ---------- trova da solo il quadro nella foto ----------
+     1) dal bordo della foto ricavo com'è il muro, compresa la luce che cambia
+        (una superficie liscia: chiaro da una parte, più scuro dall'altra);
+     2) tutto ciò che si discosta dal muro è "quadro";
+     3) tengo la macchia più grande al centro e prendo i suoi 4 angoli estremi.
+     Prima provo una soglia severa (angoli precisissimi), poi una più morbida.
+     Se il risultato non sembra un quadro, restituisco null (pallini a mano). */
+  function solve(A, y) { // sistema lineare piccolo (eliminazione di Gauss)
+    const n = y.length, M = A.map((r, i) => [...r, y[i]]);
+    for (let c = 0; c < n; c++) {
+      let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+      [M[c], M[p]] = [M[p], M[c]]; if (Math.abs(M[c][c]) < 1e-12) return null;
+      for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; }
+    }
+    return M.map((r, i) => r[n] / r[i]);
+  }
+  function detectQuad(img) {
+    const cv = scaled(img, 360), w = cv.width, h = cv.height, N = w * h;
+    const d = cv.getContext('2d').getImageData(0, 0, w, h).data;
+    const bw = Math.max(3, Math.round(Math.min(w, h) * .04));
+    const feat = (x, y) => { const X = x / w - .5, Y = y / h - .5; return [1, X, Y, X * X, Y * Y, X * Y]; };
+    // muro: superficie di secondo grado per ogni colore, stimata sul bordo
+    const AtA = Array.from({ length: 6 }, () => new Array(6).fill(0)), Aty = [0, 1, 2].map(() => new Array(6).fill(0));
+    const border = [];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (x >= bw && x < w - bw && y >= bw && y < h - bw) continue;
+      const f = feat(x, y), i = (y * w + x) * 4; border.push(i);
+      for (let r = 0; r < 6; r++) { for (let c = 0; c < 6; c++) AtA[r][c] += f[r] * f[c]; for (let k = 0; k < 3; k++) Aty[k][r] += f[r] * d[i + k]; }
+    }
+    const coef = Aty.map(v => solve(AtA, v)); if (coef.some(c => !c)) return null;
+    const D = new Float32Array(N), hist = new Uint32Array(256);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const f = feat(x, y), p = y * w + x, i = p * 4; let s2 = 0;
+      for (let k = 0; k < 3; k++) { let m = 0; for (let r = 0; r < 6; r++) m += coef[k][r] * f[r]; s2 += (d[i + k] - m) ** 2; }
+      const v = Math.min(255, Math.sqrt(s2)); D[p] = v; hist[v | 0]++;
+    }
+    const bres = border.map(i => D[i / 4]).sort((a, b) => a - b), noise = bres[bres.length >> 1];
+    if (noise > 30) return null;                                // muro troppo vario: non indovino
+    let sum = 0; for (let t = 0; t < 256; t++) sum += t * hist[t];
+    let wB = 0, sB = 0, best = 0, otsu = 40;
+    for (let t = 0; t < 256; t++) {
+      wB += hist[t]; if (!wB) continue; const wF = N - wB; if (!wF) break;
+      sB += t * hist[t]; const mB = sB / wB, mF = (sum - sB) / wF, bt = wB * wF * (mB - mF) ** 2;
+      if (bt > best) { best = bt; otsu = t; }
+    }
+    const strict = Math.max(otsu, noise * 2.6 + 12, 22), soft = Math.min(otsu, Math.max(noise * 3.4 + 14, 24));
+    return quadAt(strict) || (soft < strict ? quadAt(soft) : null);
+
+    function quadAt(thr) {
+      const lab = new Int32Array(N), stack = new Int32Array(N); let L = 0, bestL = 0, bestScore = 0;
+      for (let p0 = 0; p0 < N; p0++) {
+        if (D[p0] <= thr || lab[p0]) continue;
+        L++; let sp = 0, n = 0, central = 0; stack[sp++] = p0; lab[p0] = L;
+        while (sp) {
+          const p = stack[--sp]; n++;
+          const x = p % w, y = (p / w) | 0;
+          if (Math.abs(x - w / 2) < w * .2 && Math.abs(y - h / 2) < h * .2) central++;
+          if (x > 0 && D[p - 1] > thr && !lab[p - 1]) { lab[p - 1] = L; stack[sp++] = p - 1; }
+          if (x < w - 1 && D[p + 1] > thr && !lab[p + 1]) { lab[p + 1] = L; stack[sp++] = p + 1; }
+          if (y > 0 && D[p - w] > thr && !lab[p - w]) { lab[p - w] = L; stack[sp++] = p - w; }
+          if (y < h - 1 && D[p + w] > thr && !lab[p + w]) { lab[p + w] = L; stack[sp++] = p + w; }
+        }
+        const score = n * (central ? 3 : 1);
+        if (score > bestScore) { bestScore = score; bestL = L; }
+      }
+      if (!bestL) return null;
+      let tl = [0, 0, Infinity], tr = [0, 0, -Infinity], br = [0, 0, -Infinity], bl = [0, 0, Infinity], area = 0;
+      for (let p = 0; p < N; p++) {
+        if (lab[p] !== bestL) continue; area++;
+        const x = p % w + .5, y = ((p / w) | 0) + .5, s = x + y, df = x - y;
+        if (s < tl[2]) tl = [x, y, s]; if (s > br[2]) br = [x, y, s];
+        if (df > tr[2]) tr = [x, y, df]; if (df < bl[2]) bl = [x, y, df];
+      }
+      const poly = [tl, tr, br, bl].map(([x, y]) => [x, y]);
+      let A2 = 0; for (let i = 0; i < 4; i++) { const [x1, y1] = poly[i], [x2, y2] = poly[(i + 1) % 4]; A2 += x1 * y2 - x2 * y1; }
+      const qa = Math.abs(A2) / 2;
+      if (qa < N * .06 || qa > N * .97 || area < qa * .6) return null;     // troppo piccolo, troppo grande o "bucato"
+      for (let i = 0; i < 4; i++) {
+        const a = poly[i], b = poly[(i + 1) % 4], c = poly[(i + 2) % 4];
+        if ((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]) <= 0) return null;
+        if (dist(a, b) < Math.min(w, h) * .12) return null;
+      }
+      return poly.map(([x, y]) => ({ x: x / w, y: y / h }));
+    }
+  }
+
   /* ---------- editor dei 4 angoli ---------- */
   let src = null;        // foto originale aperta
   let corners = null;    // 4 angoli scelti (0..1), oppure null = foto intera
@@ -276,22 +362,46 @@
     $('#cropPoly').setAttribute('points', pts);
     $('#cropShade').setAttribute('d', `M0 0H1V1H0Z M${corners.map(p => `${p.x} ${p.y}`).join(' L')}Z`);
   }
+  // lente d'ingrandimento sopra il dito
+  let cropC = null; const loupe = $('#loupe'), lx = loupe.getContext('2d');
+  function showLoupe(k, ev) {
+    if (!cropC) return;
+    const z = 4, S = 240, p = corners[k], sx = p.x * cropC.width, sy = p.y * cropC.height, half = S / (2 * z) * (cropC.width / stage.getBoundingClientRect().width);
+    lx.fillStyle = '#000'; lx.fillRect(0, 0, S, S);
+    lx.drawImage(cropC, sx - half, sy - half, half * 2, half * 2, 0, 0, S, S);
+    lx.strokeStyle = '#fff'; lx.lineWidth = 2; lx.beginPath(); lx.moveTo(S / 2, S / 2 - 22); lx.lineTo(S / 2, S / 2 + 22); lx.moveTo(S / 2 - 22, S / 2); lx.lineTo(S / 2 + 22, S / 2); lx.stroke();
+    lx.strokeStyle = '#b0241c'; lx.lineWidth = 1; lx.beginPath(); lx.arc(S / 2, S / 2, 5, 0, 7); lx.stroke();
+    const up = ev.clientY - 150 > 8;
+    loupe.style.left = Math.min(innerWidth - 128, Math.max(8, ev.clientX - 60)) + 'px';
+    loupe.style.top = (up ? ev.clientY - 150 : ev.clientY + 40) + 'px';
+    loupe.hidden = false;
+  }
   $$('.hdl').forEach(h => {
     h.addEventListener('pointerdown', e => {
       e.preventDefault(); h.setPointerCapture(e.pointerId);
       const k = +h.dataset.k;
+      showLoupe(k, e);
       const move = ev => {
         const r = stage.getBoundingClientRect();
         corners[k] = { x: Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)), y: Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height)) };
-        drawCrop();
+        drawCrop(); showLoupe(k, ev);
       };
-      const up = () => { h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up); };
+      const up = () => { loupe.hidden = true; h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up); };
       h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
     });
   });
+  let found = null;
   function openCrop(keep) {
-    if (!keep || !corners) corners = defaultCorners();
-    $('#cropImg').src = scaled(src, 1600).toDataURL('image/jpeg', .85);
+    if (!keep || !corners) {
+      try { found = detectQuad(src); } catch (e) { found = null; }
+      corners = found ? found.map(p => ({ ...p })) : defaultCorners();
+    }
+    const tip = $('#cropTip'); tip.classList.toggle('found', !!found);
+    tip.innerHTML = found
+      ? '<b>Ho trovato il quadro ✓</b> Controlla che i 4 pallini siano proprio sugli angoli della tela (tenendoli premuti li vedi da vicino), poi premi <b>Raddrizza</b>.'
+      : '<b>Trascina i 4 pallini rossi sugli angoli del quadro.</b> Tenendoli premuti li vedi da vicino. Così la foto diventa dritta, senza muro intorno, e si appoggia bene sulla tela.';
+    cropC = scaled(src, 1600);
+    $('#cropImg').src = cropC.toDataURL('image/jpeg', .85);
     $('#crop').hidden = false; $('#drop').hidden = true; $('#recrop').hidden = true;
     drawCrop();
     $('#crop').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -311,7 +421,7 @@
     try { busy('Apro la foto…'); src = await decode(file); idle(); openCrop(false); }
     catch (e) { fail(new Error('image')); }
   }
-  wireDrop($('#drop'), $('#file'), handleFile, () => $('#p-new').classList.contains('on'));
+  wireDrop($('#drop'), ['#file', '#fileCam', '#file2', '#fileCam2'].map(s => $(s)), handleFile, () => $('#p-new').classList.contains('on'));
 
   /* ---------- modulo opera ---------- */
   let editing = null;
@@ -328,7 +438,7 @@
     $('#dropEmpty').hidden = false; $('#dropFull').hidden = true; $('#drop').hidden = false;
     $('#crop').hidden = true; $('#recrop').hidden = true;
     $('#formTitle').textContent = 'Nuova opera';
-    $('#formLead').textContent = 'Scegli la foto del quadro, poi segna i 4 angoli: la foto viene raddrizzata e messa sulla tela. Poi scrivi due righe e premi Pubblica.';
+    $('#formLead').textContent = 'Fotografa il quadro: gli angoli della tela li trovo io, tu controlli e premi Raddrizza. Poi scrivi due righe e premi Pubblica.';
     $('#publish').textContent = 'Pubblica'; $('#cancelEdit').hidden = true;
   }
   $('#cancelEdit').onclick = () => { resetForm(); tab('list'); };
@@ -439,7 +549,7 @@
       $('#nbEmpty').hidden = true; $('#nbFull').hidden = false; idle();
     } catch (e) { fail(new Error('image')); }
   }
-  wireDrop($('#nbDrop'), $('#nbFile'), handleNbFile, () => $('#p-nb').classList.contains('on'));
+  wireDrop($('#nbDrop'), ['#nbFile', '#nbCam', '#nbFile2', '#nbCam2'].map(s => $(s)), handleNbFile, () => $('#p-nb').classList.contains('on'));
   $('#nbAdd').onclick = async () => {
     if (!nbSrc) { say('Manca la foto', 'Trascina o scegli la foto della pagina.'); return; }
     try {
